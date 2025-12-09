@@ -1,14 +1,26 @@
-import Image from "next/image";
-import {useEffect, useState} from "react";
-import {getCourseKey} from "@/app/components/global/types";
-import {loadJSON} from "@/app/components/global/loaddata";
-import CourseList from "@/app/components/SchedulePlanner/CoursesPanel/CourseList";
-import ScheduleGrid from "@/app/components/SchedulePlanner/Schedule/ScheduleGrid";
+import { useEffect, useState } from 'react'
+import ScheduleGrid from './SchedulePlanner/Schedule/ScheduleGrid.tsx'
+import CourseList from "./SchedulePlanner/CoursesPanel/CourseList.tsx"
+import { getCourseKey } from "./global/types.ts"
+import { loadJSON } from "./global/loaddata.ts"
 import {CourseSection} from "@/app/models/CourseSection";
 import {UniversityCurriculum} from "@/app/models/UniversityCurriculum";
 import {Course} from "@/app/models/Course";
 
-export default function Home() {
+
+function App() {
+  // responsive design check for the sidebar
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false)
+
+  // Handle resize of window
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Core data state, don't touch
   const [data, setData] = useState<UniversityCurriculum>()
@@ -147,6 +159,10 @@ export default function Home() {
 
   return (
     <div className="grid calendar-layout relative">
+      <header className="area-header sticky top-0 z-30 h-20 w-full bg-white dark:bg-neutral-800 flex flex-row justify-start items-center
+      shadow-md dark:shadow-black">
+        <Header isMobile={isMobile} isSidebarOpen={isSidebarOpen} sidebarSwitch={setIsSidebarOpen} />
+      </header>
       <aside className="area-sidebar fixed top-20 z-50 left-0 h-[calc(100vh-5rem)] md:w-[300px] lg:w-[360px] grid-rows-1 row-span-1 flex flex-col justify-start items-center">
         <CourseList
           data={data}
@@ -161,6 +177,7 @@ export default function Home() {
             setCourseVisible: setCourseVisible,
             setCourseInvisible: setCourseInvisible
           }}
+          isMobile={isMobile}
           isOpen={isSidebarOpen}
           sidebarSwitch={setIsSidebarOpen}
         />
@@ -175,3 +192,8 @@ export default function Home() {
     </div>
   )
 }
+
+export default App
+
+
+
