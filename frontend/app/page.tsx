@@ -1,12 +1,13 @@
 import Image from "next/image";
 import {useEffect, useState} from "react";
-import {getCourseKey} from "@/app/components/global/types";
 import {loadJSON} from "@/app/components/global/loaddata";
 import CourseList from "@/app/components/SchedulePlanner/CoursesPanel/CourseList";
 import ScheduleGrid from "@/app/components/SchedulePlanner/Schedule/ScheduleGrid";
 import {CourseSection} from "@/app/models/CourseSection";
 import {UniversityCurriculum} from "@/app/models/UniversityCurriculum";
 import {Course} from "@/app/models/Course";
+//import CourseCacheService from "@/app/services/CourseCacheService";
+//import {useCredits} from "@/app/contexts/useCredits";
 
 export default function Home() {
 
@@ -14,12 +15,8 @@ export default function Home() {
   const [data, setData] = useState<UniversityCurriculum>()
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false)
 
-  // variables to keep tracking of selected courses
-  const [selectedSections, setSelectedSections] = useState<Set<CourseSection>>(new Set())
   const [visibleSections, setVisibleSections] = useState<Set<CourseSection>>(new Set())
 
-  // credits and course counter service variables
-  const [credits, setCredits] = useState<number>(0)
   const [courseTracker, setCourseTracker] = useState<Map<string, Course>>(new Map())
 
   // CRUD operations for the set
@@ -27,102 +24,6 @@ export default function Home() {
 
   // starting with the CRUD of the course and credits counter
 
-  // add a course
-  const addCourse = (course: Course) => {
-    // the keys of the courses have this structure
-    const courseKey = getCourseKey(course)
-    // if is already added, do not add it again
-    if (courseTracker.has(courseKey)) return
-    setCourseTracker(prev => {
-      const temp = new Map(prev)
-      temp.set(courseKey, course)
-      return temp
-    })
-    // update credits
-    setCredits(prev => prev + course.getCredits())
-  }
-  // remove a course
-  const removeCourse = (course: Course) => {
-    const courseKey = getCourseKey(course)
-    if (!courseTracker.has(courseKey)) return
-
-    setCourseTracker(prev => {
-      const temp = new Map(prev)
-      temp.delete(courseKey)
-      return temp
-    })
-    // update credits
-    setCredits(prev => prev - course.getCredits())
-  }
-
-  // add a section
-  const addSections = (sections: CourseSection | CourseSection[]) => {
-    sections = Array.isArray(sections) ? sections : [sections]
-    // set the general sections tracker
-    setSelectedSections(prev => {
-      const temp = new Set(prev)
-      sections.forEach(section => temp.add(section))
-      return temp
-    })
-    // set the visible sections tracker
-    setVisibleSections(prev => {
-      const temp = new Set(prev)
-      sections.filter(section => section.courseVisible).forEach(section => temp.add(section))
-      return temp
-    })
-  }
-  // remove a section from both the selected and visible sections
-  const removeSections = (sections: CourseSection | CourseSection[]) => {
-    sections = Array.isArray(sections) ? sections : [sections]
-    setSelectedSections(prev => {
-      const temp = new Set(prev)
-      sections.forEach(section => temp.delete(section))
-      return temp
-    })
-    setVisibleSections(prev => {
-      const temp = new Set(prev)
-      sections.forEach(section => temp.delete(section))
-      return temp
-    })
-  }
-  // check if a section is selected
-  const hasSection = (section: CourseSection) => {
-    return selectedSections.has(section)
-  }
-  // clear the section tracker
-  const clearSecTracker = () => {
-    // de select all sections per course in the course tracker
-    courseTracker.forEach((course: Course) => {
-      course.unselectAllSections()
-    })
-    // empty the sections render list
-    setVisibleSections(new Set())
-    setSelectedSections(new Set())
-    setCourseTracker(new Map())
-    setCredits(0)
-  }
-
-  // functions to set the visibility of courses
-  const setCourseInvisible = (course: Course) => {
-    course.getSections().forEach((section: CourseSection) => {
-      setVisibleSections(prev => {
-        const temp = new Set(prev)
-        temp.delete(section)
-        return temp
-      })
-    })
-  }
-  const setCourseVisible = (course: Course) => {
-    course.getSections().forEach((section: CourseSection) => {
-      if (hasSection(section)) {
-        setVisibleSections(prev => {
-          const temp = new Set(prev)
-          temp.add(section)
-          return temp
-        })
-      }
-    })
-  }
 
   // Load the JSON data and set the data state
   // This is done in a useEffect to avoid blocking the main thread
@@ -161,8 +62,6 @@ export default function Home() {
             setCourseVisible: setCourseVisible,
             setCourseInvisible: setCourseInvisible
           }}
-          isOpen={isSidebarOpen}
-          sidebarSwitch={setIsSidebarOpen}
         />
       </aside>
       <main className="area-main row-span-1 w-full h-full flex flex-row justify-center">

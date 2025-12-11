@@ -1,10 +1,10 @@
-import { SectionSelectionOps } from '../../global/types.ts';
 import { ChevronDown, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import CourseCardSection from './CourseCardSection.tsx';
 import {CourseSection} from "@/app/models/CourseSection";
 import {Course} from "@/app/models/Course";
 import {CourseColor} from "@/app/utils/CourseCard";
+import {SectionSelectionOps} from "@/app/services/CourseCacheService";
 
 
 interface CourseCardCheckboxAllProps {
@@ -12,8 +12,6 @@ interface CourseCardCheckboxAllProps {
   colorPair: CourseColor;
   checked: boolean;
   setAllChecked: (val: boolean) => void;
-  // allVisible: boolean;
-  // setAllVisible: Dispatch<React.SetStateAction<boolean>>;
   sectionOps: SectionSelectionOps;
 }
 function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked, sectionOps }: CourseCardCheckboxAllProps) {

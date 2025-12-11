@@ -1,13 +1,11 @@
 import { Calendar } from "lucide-react"
 import { useResponsive } from "@/app/contexts/useResponsive";
+import { useSidebar } from "@/app/contexts/useSidebar"
 
 
-interface HeaderProps {
-  isSidebarOpen: boolean;
-  sidebarSwitch: (isOpen: boolean) => void;
-}
-function Header({ isSidebarOpen, sidebarSwitch }: Readonly<HeaderProps>) {
+function Header() {
   const { isMobile } = useResponsive()
+  const { toggleSidebar } = useSidebar()
   return (
     <>
       <header className="area-header sticky top-0 z-30 h-20 w-full bg-white dark:bg-neutral-800 flex flex-row justify-between items-center
@@ -16,7 +14,7 @@ function Header({ isSidebarOpen, sidebarSwitch }: Readonly<HeaderProps>) {
           {isMobile &&
             <button
               className="px-2 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 duration-100"
-              onClick={() => sidebarSwitch(!isSidebarOpen)}>
+              onClick={() => toggleSidebar()}>
               <span className="text-lg">☰</span>
             </button>
           }

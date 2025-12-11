@@ -2,17 +2,14 @@ import { useEffect, useState } from 'react'
 import Tabs from './Tabs/Tabs.tsx'
 import CourseCard from './CourseCard.tsx'
 import SearchFilter from './SearchFilter/SearchFilter.tsx'
-import {
-  FilterChooser,
-  Filters,
-  SectionSelectionOps
-} from '../../global/types.ts'
 import { getCoursesFromData, initializeFilters } from '../../global/loaddata.ts'
-import {UniversityCurriculum} from "@/app/models/UniversityCurriculum";
-import {Course} from "@/app/models/Course";
-import {getCourseColor} from "@/app/utils/CourseCard";
-import {useResponsive} from "@/app/contexts/useResponsive";
-
+import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
+import { Course } from "@/app/models/Course";
+import { getCourseColor } from "@/app/utils/CourseCard";
+import { useResponsive } from "@/app/contexts/useResponsive";
+import { useSidebar } from "@/app/contexts/useSidebar";
+import {FilterChooser, Filters} from "@/app/models/Filters";
+import {SectionSelectionOps} from "@/app/services/CourseCacheService";
 
 
 function renderCoursesSidebar(courses: Course[], sectionOps: SectionSelectionOps) {
@@ -42,13 +39,12 @@ function renderCoursesSidebar(courses: Course[], sectionOps: SectionSelectionOps
 interface CourseListProps {
   data: UniversityCurriculum | undefined;
   isDataLoaded: boolean;
-  isOpen: boolean;
-  sidebarSwitch: (isOpen: boolean) => void;
   sectionOps: SectionSelectionOps;
 }
 
-function CourseList({ data, isDataLoaded, isOpen, sidebarSwitch, sectionOps }: CourseListProps) {
+function CourseList({ data, isDataLoaded, sectionOps }: CourseListProps) {
   const { isMobile } = useResponsive()
+  const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [courses, setCourses] = useState<Course[]>([])
   const [filters, setFilters] = useState<FilterChooser>({
     cycles: [],
@@ -80,7 +76,7 @@ function CourseList({ data, isDataLoaded, isOpen, sidebarSwitch, sectionOps }: C
       shadow-lg bg-white dark:bg-neutral-800 dark:shadow-md dark:shadow-black
       transform transition-transform duration-300 ease-in-out
       ${(isMobile)
-        ? `fixed top-0 left-0 max-w-sm z-50 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
+        ? `fixed top-0 left-0 max-w-sm z-50 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
         : 'sticky'}
     `}>
       <Tabs
@@ -93,7 +89,7 @@ function CourseList({ data, isDataLoaded, isOpen, sidebarSwitch, sectionOps }: C
                 <h2 className="inline-block ml-2 font-normal text-lg">Tus cursos</h2>
                 {(isMobile) && <button
                   className="text-lg my-2 ml-4 px-2 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                  onClick={() => sidebarSwitch(!isOpen)}>
+                  onClick={() => toggleSidebar()}>
                   {'>'}
                 </button>}
 

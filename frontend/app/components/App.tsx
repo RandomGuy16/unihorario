@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import ScheduleGrid from './SchedulePlanner/Schedule/ScheduleGrid.tsx'
 import CourseList from "./SchedulePlanner/CoursesPanel/CourseList.tsx"
-import { getCourseKey } from "./global/types.ts"
 import { loadJSON } from "./global/loaddata.ts"
 import {CourseSection} from "@/app/models/CourseSection";
 import {UniversityCurriculum} from "@/app/models/UniversityCurriculum";
 import {Course} from "@/app/models/Course";
+import {getCourseKey} from "@/app/services/CourseCacheService";
 
 
 function App() {

@@ -1,14 +1,12 @@
-import {
-  Filters,
-  FilterChooser,
-  createCourseKey
-} from "./types"
+
 import {Cycle} from "@/app/models/Cycle";
 import {Year} from "@/app/models/Year";
 import {CourseSection} from "@/app/models/CourseSection";
 import {Career} from "@/app/models/Career";
 import {UniversityCurriculum} from "@/app/models/UniversityCurriculum";
 import {Course} from "@/app/models/Course";
+import {createCourseKey} from "@/app/services/CourseCacheService";
+import {FilterChooser, Filters} from "@/app/models/Filters";
 
 
 // entrypoint to load JSON

@@ -1,7 +1,8 @@
 import Select from 'react-select'
 import { useState } from 'react'
-import { FilterChooser, Filters, SectionSelectionOps } from '../../../global/types.ts'
 import getReactSelectStyles from "../ReactSelectStyles.ts";
+import {FilterChooser, Filters} from "@/app/models/Filters";
+import {SectionSelectionOps} from "@/app/services/CourseCacheService";
 
 
 interface selectFilterOption {

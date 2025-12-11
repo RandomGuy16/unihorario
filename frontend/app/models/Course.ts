@@ -9,7 +9,7 @@ export class Course {
   private readonly sections: Set<CourseSection>;
   private readonly year: number;
   private readonly selectedSections: Set<CourseSection>;
-  private visible: boolean = true; // visibility of the course itself
+  private visible: boolean = true;
 
   constructor(id: string, name: string, credits: number, teacher: string, career: string, year: number, section?: CourseSection) {
     this.id = id
@@ -33,6 +33,9 @@ export class Course {
   }
 
   selectSection(section: CourseSection) {
+    if (!this.sections.has(section)) console.warn(
+      `Trying to select a section that is not part of the course ${this.name} (${this.id})`
+    )
     this.selectedSections.add(section)
   }
 
@@ -55,13 +58,6 @@ export class Course {
   areAllSectionsSelected(): boolean {
     return this.selectedSections.size === this.sections.size
   }
-
-  // setAllSectionsVisibility(visibility: boolean) {
-  //   this.sections.forEach(section => section.visible = visibility)
-  // }
-  // areAllSectionsVisible(): boolean {
-  //   return Array.from(this.sections).every(section => section.visible === true)
-  // }
 
   getVisibility(): boolean {
     return this.visible

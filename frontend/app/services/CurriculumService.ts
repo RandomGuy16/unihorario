@@ -1,3 +1,14 @@
+import {useReducer} from "react";
 
 
-export default class CurriculumService {}
+interface CurriculumState {
+  state: any;
+  payload: any;
+  error: any;
+}
+
+export default class CurriculumService {
+  constructor() {
+  }
+
+}

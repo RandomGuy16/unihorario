@@ -1,4 +1,4 @@
-import {Schedule} from "@/app/models/Schedule";
+import { Schedule } from "@/app/models/Schedule";
 
 export const REM_HEIGHT_PER_HOUR = 5;
 
@@ -23,6 +23,7 @@ export function calculateECPosition(schedule: Schedule, occupiedHours: number[][
   // leftCurrentMaxCollisions is used to determine the left offset
   let leftCurrentMaxCollisions = 0
   // add 1 to the occupied slots for each hour in the range
+
   for (let i = startHourIndex; i < endHourIndex; i++) {
     // use the maximum number of overlaps at the moment
     leftCurrentMaxCollisions = Math.max(leftCurrentMaxCollisions, occupiedHours[i][1])

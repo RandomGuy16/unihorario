@@ -1,7 +1,7 @@
-import { SectionSelectionOps } from '../../global/types.ts'
 import {CourseSection} from "@/app/models/CourseSection";
 import {Course} from "@/app/models/Course";
 import {CourseColor} from "@/app/utils/CourseCard";
+import {SectionSelectionOps} from "@/app/services/CourseCacheService";
 // import { Eye, EyeOff } from 'lucide-react'
 
 
