@@ -49,7 +49,7 @@ function CourseList() {
 
     const filteredCourses: Course[] = []
     const seenIds = new Set<string>()
-4
+
     const filteredCycles = data!.years
       .filter(y => !selection.year || y.year === selection.year)
       .flatMap(y => y.careerCurriculums)
