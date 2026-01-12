@@ -1,3 +1,4 @@
+"use client"
 import { Calendar } from "lucide-react"
 import { useResponsive } from "@/app/contexts/useResponsive";
 import { useSidebar } from "@/app/contexts/useSidebar"

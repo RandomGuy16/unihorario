@@ -1,23 +1,20 @@
-import Select from 'react-select'
+import Select, {StylesConfig} from 'react-select'
 import { useState } from 'react'
-import getReactSelectStyles from "../ReactSelectStyles.ts";
-import {FilterChooser, Filters} from "@/app/models/Filters";
-import {SectionSelectionOps} from "@/app/services/CourseCacheService";
+import getReactSelectStyles from "@/app/components/CoursesPanel/ReactSelectStyles";
+import { useCourseCache } from "@/app/contexts/useCourseCache";
+import { useFilters } from "@/app/contexts/useFilters";
 
 
 interface selectFilterOption {
   label: string;
   value: string;
 }
-interface SearchFilterProps {
-  filterChooser: FilterChooser;
-  selectedFilters: Filters;
-  setSelectedFiltersSet: (filters: Filters) => void;
-  sectionOps: SectionSelectionOps;
-}
-function SearchFilter({ filterChooser, selectedFilters, setSelectedFiltersSet, sectionOps }: SearchFilterProps) {
+
+function SearchFilter() {
+  const {selection, available: availableFilters, updateSelection} = useFilters()
+  const { clearSections } = useCourseCache()
   // Listen for theme changes
-  const [selectStyles, setSelectStyles] = useState<any>(getReactSelectStyles())
+  const [selectStyles, setSelectStyles] = useState<StylesConfig>(getReactSelectStyles())
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     // Re-render or update styles
     setSelectStyles(getReactSelectStyles())
@@ -35,27 +32,25 @@ function SearchFilter({ filterChooser, selectedFilters, setSelectedFiltersSet, s
           className="text-base font-normal my-1 mt-0 shadow-lg dark:shadow-md dark:shadow-black"
           styles={selectStyles} // Call the function
           options={
-            filterChooser.careers.map(filterOption => ({
+            availableFilters.careers.map(filterOption => ({
               value: filterOption,
               label: filterOption,
             }))
           }
           defaultValue={{
-            label: selectedFilters.career,
-            value: selectedFilters.career
+            label: selection.career,
+            value: selection.career
           }}
           value={{
-            label: selectedFilters.career,
-            value: selectedFilters.career
+            label: selection.career,
+            value: selection.career
           }}
           onChange={(newValue: unknown) => {
-            setSelectedFiltersSet({
-              career: (newValue as selectFilterOption).value,
-              cycle: selectedFilters.cycle,
-              year: selectedFilters.year
+            updateSelection({
+              career: (newValue as selectFilterOption).value
             })
             // clear the sections when the career changes
-            sectionOps.clearSections()
+            clearSections()
           }}>
         </Select>
       </div>
@@ -64,24 +59,22 @@ function SearchFilter({ filterChooser, selectedFilters, setSelectedFiltersSet, s
           className="text-base font-normal text-white my-1 shadow-lg dark:shadow-md dark:shadow-black"
           styles={selectStyles}
           options={
-            filterChooser.cycles.map(filterOption => ({
+            availableFilters.cycles.map(filterOption => ({
               label: filterOption,
               value: filterOption,
             }))
           }
           defaultValue={{
-            label: selectedFilters.cycle,
-            value: selectedFilters.cycle
+            label: selection.cycle,
+            value: selection.cycle
           }}
           value={{
-            label: selectedFilters.cycle,
-            value: selectedFilters.cycle
+            label: selection.cycle,
+            value: selection.cycle
           }}
           onChange={(newValue: unknown) => {
-            setSelectedFiltersSet({
-              career: selectedFilters.career,
-              cycle: (newValue as selectFilterOption).value,
-              year: selectedFilters.year
+            updateSelection({
+              cycle: (newValue as selectFilterOption).value
             })
           }}>
         </Select>
@@ -91,24 +84,22 @@ function SearchFilter({ filterChooser, selectedFilters, setSelectedFiltersSet, s
           className="text-base font-normal text-white my-1 mb-0 shadow-lg dark:shadow-md dark:shadow-black"
           styles={selectStyles}
           options={
-            filterChooser.years.map(filterOption => ({
+            availableFilters.years.map(filterOption => ({
               label: filterOption,
               value: filterOption
             }))
           }
           defaultValue={{
-            label: selectedFilters.year,
-            value: selectedFilters.year
+            label: selection.year,
+            value: selection.year
           }}
           value={{
-            label: selectedFilters.year,
-            value: selectedFilters.year
+            label: selection.year,
+            value: selection.year
           }}
           onChange={(newValue: unknown) => {
-            setSelectedFiltersSet({
-              career: selectedFilters.career,
-              cycle: selectedFilters.cycle,
-              year: (newValue as selectFilterOption).value,
+            updateSelection({
+              year: (newValue as selectFilterOption).value
             })
           }}>
         </Select>

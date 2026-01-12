@@ -1,10 +1,9 @@
-import ScheduleEventCard from './ScheduleEventCard.tsx'
-import ScheduleStatusHeader from "./ScheduleStatusHeader.tsx";
-import { useState, useEffect, ReactElement } from 'react'
-import {CourseSection} from "@/app/models/CourseSection";
-import {Schedule} from "@/app/models/Schedule";
-import {Course} from "@/app/models/Course";
-import {calculateECPosition} from "@/app/utils/EventCard";
+import ScheduleEventCard from './ScheduleEventCard'
+import ScheduleStatusHeader from "./ScheduleStatusHeader";
+import { ReactElement, useMemo } from 'react'
+import { Schedule } from "@/app/models/Schedule";
+import { calculateECPosition } from "@/app/utils/EventCard";
+import { useCourseCache } from "@/app/contexts/useCourseCache";
 
 
 const MONDAY_ID = "monday"
@@ -37,86 +36,67 @@ interface DayData {
 }
 
 
-// render all selected courses
-function renderSections(sections: CourseSection[]) {
-  const daysData: DayData[] = Array.from({ length: 6 }, () => {
-    return {
-      schedules: [],
-      eventCards: [],
-      occupiedSlots: Array.from({ length: 15 }, () => [0, 0]) // 13 slots for hours 8 to 20
-    }
-  })
-
-  // filter visible sections
-  const sectionsRenderList: CourseSection[] = sections.filter((section) => section.courseVisible)
-
-  // first foreach loop to fill the daysData with schedules and occupied slots
-  sectionsRenderList.forEach((section) => {
-    section.schedules.forEach((schedule) => {
-      const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
-      // skip if not a valid day
-      if (dayIndex === undefined) return
-
-      // mark the slots as occupied
-      const startHourIndex = Number(schedule.start.split(':')[0]) - 8
-      const endHourIndex = Number(schedule.end.split(':')[0]) - 8
-      // add 1 to the occupied slots for each hour in the range
-      for (let i = startHourIndex; i < endHourIndex; i++) {
-        daysData[dayIndex].occupiedSlots[i][0] += 1
-      }
-
-      daysData[dayIndex].schedules.push(schedule)
-    })
-  })
-
-  // second foreach loop to fill the event cards
-  sectionsRenderList.forEach((section, i) => {
-    section.schedules.forEach((schedule, j) => {
-      const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
-      // skip if not a valid day
-      if (dayIndex === undefined) return
-
-      const eventCard = (<ScheduleEventCard
-        key={`${i}${j} ${section.assignmentId} ${section.assignment}`}
-        schedule={schedule}
-        section={section}
-        positionStyle={calculateECPosition(schedule, daysData[dayIndex].occupiedSlots)}
-      />)
-      daysData[dayIndex].eventCards.push(eventCard)
-    })
-  })
-
-
-  return daysData
-}
-
-
-interface ScheduleGridProps {
-  selectedSections: CourseSection[];
-  courseTracker: Map<string, Course>;
-  credits: number;
-}
 // element for the calendar grid
-function ScheduleGrid({ selectedSections, courseTracker, credits }: ScheduleGridProps) {
+function ScheduleGrid() {
+  const visibleSections = Array.from(useCourseCache().selectedSections)
+    .filter((section) => section.courseVisible)
+
+  const filteredData = useMemo(() => {
+    const daysData: DayData[] = Array.from({ length: 6 }, () => {
+      return {
+        schedules: [],
+        eventCards: [],
+        occupiedSlots: Array.from({ length: 15 }, () => [0, 0]) // 13 slots for hours 8 to 20
+      }
+    })
+
+    // first foreach loop to fill the daysData with schedules and occupied slots
+    visibleSections.forEach((section) => {
+      section.schedules.forEach((schedule) => {
+        const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
+        // skip if not a valid day
+        if (dayIndex === undefined) return
+
+        // mark the slots as occupied
+        const startHourIndex = Number(schedule.start.split(':')[0]) - 8
+        const endHourIndex = Number(schedule.end.split(':')[0]) - 8
+        // add 1 to the occupied slots for each hour in the range
+        for (let i = startHourIndex; i < endHourIndex; i++) {
+          daysData[dayIndex].occupiedSlots[i][0] += 1
+        }
+        daysData[dayIndex].schedules.push(schedule)
+      })
+    })
+
+    // second foreach loop to fill the event cards
+    visibleSections.forEach((section, i) => {
+      section.schedules.forEach((schedule, j) => {
+        const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
+        // skip if not a valid day
+        if (dayIndex === undefined) return
+
+        const eventCard = (<ScheduleEventCard
+          key={`${i}${j} ${section.assignmentId} ${section.assignment}`}
+          schedule={schedule}
+          section={section}
+          positionStyle={calculateECPosition(schedule, daysData[dayIndex].occupiedSlots)}
+        />)
+        daysData[dayIndex].eventCards.push(eventCard)
+      })
+    })
+    return daysData
+  }, [visibleSections])
+
   // Lists to store the schedules of each day
-  const [mondayData, setMondayData] = useState<DayData>({ schedules: [], eventCards: [], occupiedSlots: [] })
-  const [tuesdayData, setTuesdayData] = useState<DayData>({ schedules: [], eventCards: [], occupiedSlots: [] })
-  const [wednesdayData, setWednesdayData] = useState<DayData>({ schedules: [], eventCards: [], occupiedSlots: [] })
-  const [thursdayData, setThursdayData] = useState<DayData>({ schedules: [], eventCards: [], occupiedSlots: [] })
-  const [fridayData, setFridayData] = useState<DayData>({ schedules: [], eventCards: [], occupiedSlots: [] })
-  const [saturdayData, setSaturdayData] = useState<DayData>({ schedules: [], eventCards: [], occupiedSlots: [] })
+  const mondayData = filteredData[0]
+  const tuesdayData = filteredData[1]
+  const wednesdayData = filteredData[2]
+  const thursdayData = filteredData[3]
+  const fridayData = filteredData[4]
+  const saturdayData = filteredData[5]
 
   // hook used to render every selected CourseSection
   // meant to run every time the user updates its selection
-  useEffect(() => {
-    const filteredData = renderSections(selectedSections)
-    setMondayData(filteredData[0])
-    setTuesdayData(filteredData[1])
-    setWednesdayData(filteredData[2])
-    setThursdayData(filteredData[3])
-    setFridayData(filteredData[4])
-    setSaturdayData(filteredData[5])
-  }, [selectedSections]);
 
   return (
     <div className="flex flex-col justify-start items-stretch w-full my-4">
@@ -127,8 +107,6 @@ function ScheduleGrid({ selectedSections, courseTracker, credits }: ScheduleGrid
             wednesdayData.schedules, thursdayData.schedules,
             fridayData.schedules, saturdayData.schedules
           ]}
-          courseTracker={courseTracker}
-          credits={credits}
         />
       </div>
       <div className="
@@ -136,14 +114,14 @@ function ScheduleGrid({ selectedSections, courseTracker, credits }: ScheduleGrid
         bg-white dark:bg-neutral-800 rounded-xl shadow-lg dark:shadow-md dark:shadow-black"
         id="calendar-grid">
         <div className="
-        flex flex-[8] flex-row justify-evenly items-center w-full max-h-6 rounded-t-xl font-light
+        flex flex-8 flex-row justify-evenly items-center w-full max-h-6 rounded-t-xl font-light
         text-black bg-gray-200 dark:text-white dark:bg-gray-800 cursor-default">
           <div className="flex flex-1 max-w-12 md:max-w-12 lg:max-w-16 flex-col justify-evenly items-center"></div>
           {["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"].map(
             (day, i) => (<div key={i} className="m-auto text-center flex-1">{day}</div>)
           )}
         </div>
-        <div className="flex flex-[8] flex-row justify-evenly items-start overscroll-y-auto h-full">
+        <div className="flex flex-8 flex-row justify-evenly items-start overscroll-y-auto h-full">
           <div className="flex flex-1 max-w-12 md:max-w-12 lg:max-w-16 flex-col justify-evenly items-stretch text-right">
             {["08", "09", 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(
               (hour, i) => (<div key={i} className="
@@ -151,7 +129,7 @@ function ScheduleGrid({ selectedSections, courseTracker, credits }: ScheduleGrid
                 text-right text-[0.5rem] md:text-[0.625rem] lg:text-xs">{`${hour}:00`}</div>)
             )}
           </div>
-          <div className="flex flex-[7] flex-row justify-evenly items-center h-full"
+          <div className="flex flex-7 flex-row justify-evenly items-center h-full"
             id='calendar-appointments'>
             <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
               id={MONDAY_ID}>{mondayData.eventCards}</div>

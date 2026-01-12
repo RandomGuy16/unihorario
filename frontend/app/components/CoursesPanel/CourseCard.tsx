@@ -1,10 +1,11 @@
 import { ChevronDown, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import CourseCardSection from './CourseCardSection.tsx';
-import {CourseSection} from "@/app/models/CourseSection";
-import {Course} from "@/app/models/Course";
-import {CourseColor} from "@/app/utils/CourseCard";
-import {SectionSelectionOps} from "@/app/services/CourseCacheService";
+import CourseCardSection from '@/app/components/CoursesPanel/CourseCardSection';
+import { CourseSection } from "@/app/models/CourseSection";
+import { Course } from "@/app/models/Course";
+import { CourseColor } from "@/app/utils/CourseCard";
+import { useTheme } from "@/app/contexts/useTheme";
+import { useCourseCache } from "@/app/contexts/useCourseCache";
 
 
 interface CourseCardCheckboxAllProps {
@@ -12,20 +13,18 @@ interface CourseCardCheckboxAllProps {
   colorPair: CourseColor;
   checked: boolean;
   setAllChecked: (val: boolean) => void;
-  sectionOps: SectionSelectionOps;
 }
-function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked, sectionOps }: CourseCardCheckboxAllProps) {
+function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: CourseCardCheckboxAllProps) {
+  const sectionOps = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
     if (!checked) {
-      sectionOps.addSections(course.getSections())
-      if (course.getSelectedSections().length === 0) sectionOps.trackCourse(course)
+      sectionOps.addSections(course.getSections(), course)
       course.selectAllSections()
     }
     else {
       // update the global trackers
-      sectionOps.removeSections(course.getSections())
-      sectionOps.untrackCourse(course)
+      sectionOps.removeSections(course.getSections(), course)
       // update the course
       course.unselectAllSections()
     }
@@ -70,7 +69,6 @@ function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked, sect
 
 interface CourseCardProps {
   course: Course;
-  sectionOps: SectionSelectionOps;
   colorPair: CourseColor;
 }
 /**
@@ -80,32 +78,24 @@ interface CourseCardProps {
  * @param colorPair ... colorful
  * @returns a styled div with the course
  */
-function CourseCard({ course, sectionOps, colorPair }: CourseCardProps) {
+function CourseCard({ course, colorPair }: CourseCardProps) {
+  const { theme } = useTheme()
+  const { setCourseInvisible, setCourseVisible } = useCourseCache()
+
   // state variable to swtich the dropdown menu
   const [isOpen, setIsOpen] = useState(false)
 
   // set to track locally selected sections (per course)
   const [areAllChecked, setAreAllChecked] = useState(course.areAllSectionsSelected())
-  // const [areAllVisible, setAreAllVisible] = useState(!course.areAllSectionsVisible())
   const [isCourseVisible, setIsCourseVisible] = useState(course.getVisibility())
 
-  // manage dark and light theme colors
-  const isInitiallyDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-
-  // useState to manage text and background colors
-  const [textColor, setTextColor] = useState<string>(isInitiallyDark ? colorPair.background : colorPair.text)
-  const [bgColor, setBgColor] = useState<string>(isInitiallyDark ? colorPair.text : colorPair.background)
-
-  // handle theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    setTextColor(e.matches ? colorPair.background : colorPair.text)
-    setBgColor(e.matches ? colorPair.text : colorPair.background)
-  })
+  const textColor = theme === 'dark' ? colorPair.background : colorPair.text
+  const bgColor = theme === 'dark' ? colorPair.text : colorPair.background
 
   // function to handle the visibility of the course
   const handleCourseVisibility = () => {
-    if (isCourseVisible) sectionOps.setCourseInvisible(course)
-    else sectionOps.setCourseVisible(course)
+    if (isCourseVisible) setCourseInvisible(course)
+    else setCourseVisible(course)
 
     course.setVisibility(!course.getVisibility())
     setIsCourseVisible(!isCourseVisible)
@@ -123,8 +113,6 @@ function CourseCard({ course, sectionOps, colorPair }: CourseCardProps) {
         color: `${textColor}${isCourseVisible ? "FF" : "AA"}`,
         borderColor: `${textColor}${isCourseVisible ? "FF" : "AA"}`
       }}
-    // onMouseOver={() => setIsOpen(true)}
-    // onMouseLeave={() => setIsOpen(false)}
     >
       <div className="flex flex-row justify-between items-start w-full">
         <div className="flex-1 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
@@ -167,10 +155,7 @@ function CourseCard({ course, sectionOps, colorPair }: CourseCardProps) {
                 text: textColor
               }}
               checked={areAllChecked}
-              setAllChecked={setAreAllChecked}
-              // allVisible={areAllVisible}
-              // setAllVisible={setAreAllVisible}
-              sectionOps={sectionOps}>
+              setAllChecked={setAreAllChecked}>
             </CourseCardCheckboxAll>
           </div>
           <div
@@ -188,9 +173,7 @@ function CourseCard({ course, sectionOps, colorPair }: CourseCardProps) {
                 }}
                 checked={course.isSectionSelected(section) || areAllChecked}
                 setAllChecked={setAreAllChecked}
-                // setAllVisible={setAreAllVisible}
-                section={section}
-                sectionOps={sectionOps}>
+                section={section}>
               </CourseCardSection>
             )}
           </div>

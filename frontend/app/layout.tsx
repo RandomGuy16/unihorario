@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Header from "./components/Header"
+import { ResponsiveContextProvider } from "@/app/contexts/useResponsive";
+import { SidebarContextProvider } from "@/app/contexts/useSidebar";
+import { CreditsContextProvider } from "@/app/contexts/useCredits";
 import "./globals.css";
 import { ReactNode } from "react";
 
@@ -25,8 +28,14 @@ export default function RootLayout({ children, }: Readonly<{ children: ReactNode
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-      <Header/>
-        {children}
+      <ResponsiveContextProvider>
+        <SidebarContextProvider>
+          <CreditsContextProvider>
+            <Header/>
+            {children}
+          </CreditsContextProvider>
+        </SidebarContextProvider>
+      </ResponsiveContextProvider>
       </body>
     </html>
   );

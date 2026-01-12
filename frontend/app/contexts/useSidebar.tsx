@@ -15,7 +15,7 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 interface SidebarProviderProps {
   children: ReactNode;
 }
-export function SidebarProvider({ children }: SidebarProviderProps) {
+export function SidebarContextProvider({ children }: SidebarProviderProps) {
   const { isMobile } = useResponsive()
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false)
 

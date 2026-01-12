@@ -1,8 +1,9 @@
-import {CourseSection} from "@/app/models/CourseSection";
-import {Course} from "@/app/models/Course";
-import {CourseColor} from "@/app/utils/CourseCard";
-import {SectionSelectionOps} from "@/app/services/CourseCacheService";
-// import { Eye, EyeOff } from 'lucide-react'
+import { CourseSection } from "@/app/models/CourseSection";
+import { Course } from "@/app/models/Course";
+import { CourseColor } from "@/app/utils/CourseCard";
+import { useCourseCache } from "@/app/contexts/useCourseCache";
+import { Eye, EyeOff } from 'lucide-react'
+import { useState } from "react";
 
 
 /*
@@ -14,42 +15,28 @@ interface CourseCardCheckboxProps {
   colorPair: CourseColor;
   checked: boolean;
   setAllChecked: (val: boolean) => void;
-  // setAllVisible: Dispatch<React.SetStateAction<boolean>>;
-  sectionOps: SectionSelectionOps;
 }
 
-export default function CourseCardSection({ course, section, colorPair, checked, setAllChecked, sectionOps }: CourseCardCheckboxProps) {
+export default function CourseCardSection({ course, section, colorPair, checked, setAllChecked }: CourseCardCheckboxProps) {
+  const [visible, setVisible] = useState<boolean>(section.courseVisible)
+  const { addSections, removeSections, visibleSections } = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
     // if is not checkt: not added -> add the course now
     if (!checked) {
       // update global trackers
-      sectionOps.addSections(section)
-      if (course.getSelectedSections().length === 0) sectionOps.trackCourse(course)
+      addSections(section, course)
       // update course
       course.selectSection(section)
     }
     else {
-      sectionOps.removeSections(section)
+      removeSections(section, course)
       course.unselectSection(section)
-      if (course.getSelectedSections().length === 0) sectionOps.untrackCourse(course)
     }
     // trigger the re-render of the course card
     setAllChecked(course.areAllSectionsSelected())
   }
 
-  // function to handle the visibility click event of the eye button
-  // const handleVisibilityClick = () => {
-  //   // if previously visible, remove it from the calendar, otherwise add it
-  //   section.visible
-  //     ? sectionOps.setSectionInvisible(section)
-  //     : sectionOps.setSectionVisible(section)
-  //
-  //   // at the and switch the visibility state
-  //   setVisible(section.visible)
-  // }
-
-  // const [visible, setVisible] = useState<boolean>(section.visible)
   // valuable comment: checked is the local state of the checkbox, initialized in the course object
   return (
     <div
@@ -81,13 +68,20 @@ export default function CourseCardSection({ course, section, colorPair, checked,
           ))}
         </div>
       </label>
-      {/* Eye button to set its visibility on/off */}
-      {/* <button onClick={handleVisibilityClick}> */}
-      {/*   {visible */}
-      {/*     ? <Eye className="w-4 h-4 m-2" style={{ color: `${checked ? colorPair.background : colorPair.text}` }} /> */}
-      {/*     : <EyeOff className="w-4 h-4 m-2" style={{ color: `${checked ? colorPair.background : colorPair.text}` }} /> */}
-      {/*   } */}
-      {/* </button> */}
+      Eye button to set its visibility on/off
+      <button onClick={() => {
+        setVisible(prev => {
+          if (prev) visibleSections.delete(section)
+          else visibleSections.add(section)
+          return !prev
+        })
+      }}>
+        {
+          visible
+          ? <Eye className="w-4 h-4 m-2" style={{ color: `${checked ? colorPair.background : colorPair.text}` }} />
+          : <EyeOff className="w-4 h-4 m-2" style={{ color: `${checked ? colorPair.background : colorPair.text}` }} />
+        }
+     </button>
     </div>
   )
 }

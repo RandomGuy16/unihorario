@@ -2,17 +2,19 @@
 // FilterChooser gets data from the webpage and outputs it to Filters
 import {Career} from "@/app/models/Career";
 
-export interface FilterChooser {
+export interface FilterOptions {
   years: string[];
   cycles: string[];
   careers: string[];
 }
 
-export interface Filters {
+export interface SelectedFilters {
   year: string;
   cycle: string;
   career: string;
-} // interface used by SearchFilter in CourseList.tsx and SearchFilter.tsx
+}
+
+// interface used by SearchFilter in CourseList.tsx and SearchFilter.tsx
 export interface SelectFilterOption {
   label: string;
   value: Career[];

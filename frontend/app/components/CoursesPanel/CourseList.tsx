@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react'
-import Tabs from './Tabs/Tabs.tsx'
-import CourseCard from './CourseCard.tsx'
-import SearchFilter from './SearchFilter/SearchFilter.tsx'
-import { getCoursesFromData, initializeFilters } from '../../global/loaddata.ts'
-import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
+import { useEffect, useMemo } from 'react'
+import Tabs from './Tabs/Tabs'
+import CourseCard from './CourseCard'
+import SearchFilter from './SearchFilter/SearchFilter'
 import { Course } from "@/app/models/Course";
 import { getCourseColor } from "@/app/utils/CourseCard";
 import { useResponsive } from "@/app/contexts/useResponsive";
 import { useSidebar } from "@/app/contexts/useSidebar";
-import {FilterChooser, Filters} from "@/app/models/Filters";
-import {SectionSelectionOps} from "@/app/services/CourseCacheService";
+import { useCourseCache } from "@/app/contexts/useCourseCache";
+import { useFilters } from "@/app/contexts/useFilters";
+import { useCurriculum } from "@/app/reducers/useCurriculum";
+import { createCourseKey } from "@/app/services/CourseCacheService";
 
 
-function renderCoursesSidebar(courses: Course[], sectionOps: SectionSelectionOps) {
+function renderCoursesSidebar(courses: Course[]) {
   // list to append all formatted course items
   const courseItemsList = []
   for (let i = 0; i < courses.length; i++) {
@@ -26,7 +26,6 @@ function renderCoursesSidebar(courses: Course[], sectionOps: SectionSelectionOps
       <CourseCard
         key={itemKey}
         course={course}
-        sectionOps={sectionOps}
         colorPair={colorPair}
       >
       </CourseCard>
@@ -36,39 +35,50 @@ function renderCoursesSidebar(courses: Course[], sectionOps: SectionSelectionOps
 }
 
 // attributes for CourseList
-interface CourseListProps {
-  data: UniversityCurriculum | undefined;
-  isDataLoaded: boolean;
-  sectionOps: SectionSelectionOps;
-}
 
-function CourseList({ data, isDataLoaded, sectionOps }: CourseListProps) {
+
+function CourseList() {
+  const { data } = useCurriculum()
   const { isMobile } = useResponsive()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-  const [courses, setCourses] = useState<Course[]>([])
-  const [filters, setFilters] = useState<FilterChooser>({
-    cycles: [],
-    years: [],
-    careers: []
-  })
-  const [chosenFilters, setChosenFilters] = useState<Filters>({
-    cycle: 'CICLO 4',
-    career: 'Ingeniería De Sistemas',
-    year: '2023'
-  })
+  const { getCourseInstance } = useCourseCache()
+  const { selection } = useFilters()
+
+  const coursesToRender = useMemo(() => {
+    if (!data) return []
+
+    const filteredCourses: Course[] = []
+    const seenIds = new Set<string>()
+4
+    const filteredCycles = data!.years
+      .filter(y => !selection.year || y.year === selection.year)
+      .flatMap(y => y.careerCurriculums)
+      .filter(c => !selection.career || c.name === selection.career)
+      .flatMap(c => c.cycles)
+      .filter(cy => !selection.cycle || cy.name === selection.cycle);
+
+    // iterate over all courses in the cycle
+    for (const cycle of filteredCycles) {
+      for (const section of cycle.courseSections) {
+        // create a key to use in the rendered courses tracker
+        const courseKey = createCourseKey({section, career: selection.career})
+        // get the instance of the course in the global course cache
+        // const courseInstance = getOrCreateCourse(courseKey, section, selection.career)
+        const courseInstance = getCourseInstance(courseKey)
+
+        // push the section to the new course, or last course added
+        if (courseInstance && !seenIds.has(courseInstance.getId())) {
+          filteredCourses.push(courseInstance)
+          seenIds.add(courseInstance.getId())
+        }
+      }
+    }
+    return filteredCourses
+  }, [data, selection, getCourseInstance])
 
   useEffect(() => {
-    if (isDataLoaded && data) {
-      setFilters(initializeFilters(data))
-      setCourses(getCoursesFromData(data))
-    }
-  }, [data, isDataLoaded])
 
-  useEffect(() => {
-    if (isDataLoaded && data) {
-      setCourses(getCoursesFromData(data, chosenFilters))
-    }
-  }, [chosenFilters]);
+  })
 
   return (
     <div className={`
@@ -97,12 +107,7 @@ function CourseList({ data, isDataLoaded, sectionOps }: CourseListProps) {
 
               <section className="text-base w-full h-fit my-4">
                 <span className="inline-block font-normal mb-2">Filtrar por:</span>
-                <SearchFilter
-                  filterChooser={filters}
-                  selectedFilters={chosenFilters}
-                  setSelectedFiltersSet={setChosenFilters}
-                  sectionOps={sectionOps}
-                />
+                <SearchFilter/>
               </section>
               <section className="flex flex-col justify-start items-stretch w-full min-h-20 h-fit my-4">
                 <span className="inline-block font-normal mb-2">Cursos</span>
@@ -112,7 +117,7 @@ function CourseList({ data, isDataLoaded, sectionOps }: CourseListProps) {
                     scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100
                     dark:scrollbar-thumb-gray-700 dark:scrollbar-track-gray-800"
                 >
-                  {isDataLoaded && renderCoursesSidebar(courses, sectionOps)}
+                  {data && renderCoursesSidebar(coursesToRender)}
                 </div>
               </section>
             </>

@@ -2,8 +2,9 @@ import * as htmlToImage from 'html-to-image'
 import { Sheet, Image } from 'lucide-react'
 import ExcelJS, { Worksheet } from 'exceljs'
 import {Schedule} from "@/app/models/Schedule";
-import {Course} from "@/app/models/Course";
 import {capitalize} from "@/app/utils/misc";
+import {useCourseCache} from "@/app/contexts/useCourseCache";
+import {useCredits} from "@/app/contexts/useCredits";
 
 
 // Represents a time slot with start and end times
@@ -63,10 +64,10 @@ function getCellLabel(daySchedules: Schedule[], hour: Hour) {
 
 interface ScheduleStatusHeaderProps {
   daysSchedules: Schedule[][];  // 2D array containing schedules for each day
-  courseTracker: Map<string, Course>;
-  credits: number;
 }
-export default function ScheduleStatusHeader({ daysSchedules, courseTracker, credits }: ScheduleStatusHeaderProps) {
+export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHeaderProps) {
+  const { selectedCoursesCount } = useCourseCache()
+  const { credits } = useCredits()
 
   /**
    * Exports the calendar grid as a PNG image
@@ -141,21 +142,15 @@ export default function ScheduleStatusHeader({ daysSchedules, courseTracker, cre
       <div className="flex flex-1 flex-row justify-between items-center w-full">
         <div className="mx-2 font-normal text-normal">
           <div>
-            <span>Cursos: {courseTracker.size}</span><br />
+            <span>Cursos: {selectedCoursesCount}</span><br />
             <span>Créditos: {credits}</span>
           </div>
         </div>
-
-
         {/* Export buttons */}
-        {/*
-        Light theme: #059669 (green-600)
-        Dark theme: #10B981 (emerald-500)
-
-        Light theme: #2563EB (blue-600)
-        Dark theme: #3B82F6 (blue-500)
-
-      */}
+        {/* Light theme: #059669 (green-600)
+            Dark theme: #10B981 (emerald-500)
+            Light theme: #2563EB (blue-600)
+            Dark theme: #3B82F6 (blue-500) */}
         <div className="mx-2 flex flex-row justify-end items-start">
           <span className="mx-1 my-2 text-sm text-black dark:text-white">Exportar:</span>
           <div className='flex flex-col justify-center items-start'>
@@ -165,7 +160,7 @@ export default function ScheduleStatusHeader({ daysSchedules, courseTracker, cre
           text-black bg-blue-400 dark:bg-blue-500 dark:text-white"
               export-type="image"
               onClick={() => exportImage()}>
-              <Image className="inline text-xs mr-1" />
+              <Image aria-label={"idk"} className="inline text-xs mr-1" />
               <span className="text-sm">imagen</span>
             </button>
             <button

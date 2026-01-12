@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import {CourseSection} from "@/app/models/CourseSection";
-import {Schedule} from "@/app/models/Schedule";
-import {CourseColor, getCourseColor} from "@/app/utils/CourseCard";
-import {capitalize} from "@/app/utils/misc";
+import { CourseSection } from "@/app/models/CourseSection";
+import { Schedule } from "@/app/models/Schedule";
+import { CourseColor, getCourseColor } from "@/app/utils/CourseCard";
+import { capitalize } from "@/app/utils/misc";
 
 
 interface ScheduleEventCardProps {

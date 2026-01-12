@@ -59,6 +59,10 @@ export class Course {
     return this.selectedSections.size === this.sections.size
   }
 
+  areAllSectionsUnselected(): boolean {
+    return this.selectedSections.size === 0
+  }
+
   getVisibility(): boolean {
     return this.visible
   }
