@@ -89,9 +89,9 @@ class CourseSection(BaseModel):
     teacher: str
     schedules: List[Schedule]
     credits: int
-    studyPlan: str
+    studyPlan: str = ''
     maxStudents: int
-    courseVisible: bool
+    courseVisible: bool = True
 
 
 class Cycle(BaseModel):

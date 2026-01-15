@@ -12,14 +12,15 @@ class CatalogService:
     data: Dict[str, CareerCatalogData]
 
     def __init__(self):
+        self.data = {}
         logger.debug(JSON_DIR)
 
         # initialize catalog
         for file in JSON_DIR.glob("*.json"):
             career_data = CareerCatalogData(studyPlans=[], cycles=[], faculty="")
-
+            
             with open(file, "r") as f:
-                data: CareerCurriculum = json.load(f)
+                data: CareerCurriculum = CareerCurriculum.model_validate(json.load(f))
                 for year in data.years:
                     career_data.faculty = year.metadata.faculty
                     career_data.studyPlans.append(year.metadata.studyPlan)
@@ -47,7 +48,7 @@ class CurriculumService:
         tasks = [self.parse_pdf(pdf_file) for pdf_file in pdf_files]
         return await asyncio.gather(*tasks)
 
-    async def process_all_pdfs_in_directory(self, directory: str = PDF_DIR) -> List[CareerCurriculum]:
+    async def process_all_pdfs_in_directory(self, directory: path.Path = PDF_DIR) -> List[CareerCurriculum]:
         """Process all PDFs in a directory concurrently"""
         pdf_files = list(path.Path(directory).glob("*.pdf"))
         return await self.parse_multiple_pdfs(pdf_files)
