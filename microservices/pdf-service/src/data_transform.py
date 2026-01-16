@@ -3,7 +3,8 @@ import pathlib as path
 import pdfplumber
 import os
 from config import PDF_DIR, JSON_DIR
-from src.models.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule
+from src.models.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
+    UniversityCurriculum
 from typing import List
 
 
@@ -55,14 +56,18 @@ def write_json(json_file: path.Path, career: CareerCurriculum):
 
 def _parse_pdf_sync(pdf_file: path.Path):
     """This function means cpu intensive work"""
-    out: CareerCurriculum = CareerCurriculum(years=[])
+    out: UniversityCurriculum = UniversityCurriculum(years=[])
     with pdfplumber.open(pdf_file) as pdf:
         metadata = extract_metadata(pdf)
         full_tables = bundle_tables(pdf)
-
-        out.years.append(Year(
+        career_curriculums = CareerCurriculum(
             metadata=metadata,
             cycles=[]
+        )
+
+        out.years.append(Year(
+            year=metadata.studyPlan,
+            careerCurriculums=[career_curriculums]
         ))
 
         for i, table in enumerate(full_tables):
@@ -105,7 +110,7 @@ def _parse_pdf_sync(pdf_file: path.Path):
                     teacher=course_section.teacher
                 ))
 
-            out.years[-1].cycles.append(curr_cycle)
+            out.years[-1].careerCurriculums[-1].cycles.append(curr_cycle)
 
         # debug here
     write_json(path.Path(JSON_DIR, f"{metadata.school}.json"), out)

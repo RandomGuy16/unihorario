@@ -99,12 +99,17 @@ class Cycle(BaseModel):
     courseSections: List[CourseSection]
 
 
-class Year(BaseModel):
+class CareerCurriculum(BaseModel):
     metadata: CareerCurriculumMetadata
     cycles: List[Cycle]
 
 
-class CareerCurriculum(BaseModel):
+class Year(BaseModel):
+    year: str
+    careerCurriculums: List[CareerCurriculum]
+
+
+class UniversityCurriculum(BaseModel):
     years: List[Year]
 
 

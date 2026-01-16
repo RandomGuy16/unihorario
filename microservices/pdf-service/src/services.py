@@ -21,7 +21,7 @@ class CatalogService:
             
             with open(file, "r") as f:
                 data: CareerCurriculum = CareerCurriculum.model_validate(json.load(f))
-                for year in data.years:
+                for year in data.cycles:
                     career_data.faculty = year.metadata.faculty
                     career_data.studyPlans.append(year.metadata.studyPlan)
                     for cycle in year.cycles:
