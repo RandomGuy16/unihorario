@@ -4,6 +4,7 @@ import Header from "./components/Header"
 import { ResponsiveContextProvider } from "@/app/contexts/useResponsive";
 import { SidebarContextProvider } from "@/app/contexts/useSidebar";
 import { CreditsContextProvider } from "@/app/contexts/useCredits";
+import { ThemeContextProvider } from "@/app/contexts/useTheme";
 import "./globals.css";
 import { ReactNode } from "react";
 
@@ -28,14 +29,16 @@ export default function RootLayout({ children, }: Readonly<{ children: ReactNode
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-      <ResponsiveContextProvider>
-        <SidebarContextProvider>
-          <CreditsContextProvider>
-            <Header/>
-            {children}
-          </CreditsContextProvider>
-        </SidebarContextProvider>
-      </ResponsiveContextProvider>
+      <ThemeContextProvider>
+        <ResponsiveContextProvider>
+          <SidebarContextProvider>
+            <CreditsContextProvider>
+              <Header/>
+              {children}
+            </CreditsContextProvider>
+          </SidebarContextProvider>
+        </ResponsiveContextProvider>
+      </ThemeContextProvider>
       </body>
     </html>
   );

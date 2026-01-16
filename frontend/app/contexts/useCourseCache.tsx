@@ -1,13 +1,13 @@
 "use client"
-import {createContext, ReactNode, useContext, useMemo, useEffect, useState} from "react"
-import {useCredits} from "@/app/contexts/useCredits"
-import {Course} from "@/app/models/Course"
-import {CourseSection} from "@/app/models/CourseSection"
-import {useCurriculum} from "@/app/reducers/useCurriculum";
+import { createContext, ReactNode, useContext, useMemo, useEffect, useState } from "react"
+import { useCredits } from "@/app/contexts/useCredits"
+import { Course } from "@/app/models/Course"
+import { CourseSection } from "@/app/models/CourseSection"
+import { useCurriculum } from "@/app/reducers/useCurriculum";
 
 
-function generateCourseKey(course: Course): string {
-  return `${course.getYear()}-${course.getId()}-${course.getName()}-${course.getCareer()}`;
+export function generateCourseKey(year: string | number, id: string, name: string, career: string): string {
+  return `${year}-${id}-${name}-${career}`;
 }
 
 // Global interface for trackers selection operations
@@ -27,7 +27,6 @@ interface CourseCacheContextType extends SectionSelectionOps {
   selectedSections: Set<CourseSection>;
   visibleSections: Set<CourseSection>;
   selectedCoursesCount: number;
-  getOrCreateCourse: (courseKey: string, section: CourseSection, career: string) => Course;
   getCourseInstance: (courseKey: string) => Course | undefined;
 }
 
@@ -61,33 +60,10 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
 
   useEffect(() => {
     if (courseRegistry && courseRegistry.size > 0) {
-      setAllCourses(new Map(courseRegistry))
+      console.log("CourseCacheContextProvider: Updating courses from registry")
+      setAllCourses(courseRegistry)
     }
   }, [courseRegistry])
-
-
-  const getOrCreateCourse = (courseKey: string, section: CourseSection, career: string): Course => {
-    if (allCourses.has(courseKey)) {
-      return allCourses.get(courseKey)!
-    }
-
-    const newCourse = new Course(
-      section.assignmentId,
-      section.assignment,
-      section.credits,
-      section.teacher,
-      career,
-      section.year
-    )
-
-    setAllCourses(prev => {
-      const next = new Map(prev)
-      next.set(courseKey, newCourse)
-      return next
-    })
-
-    return newCourse
-  }
 
   const getCourseInstance = (courseKey: string): Course | undefined => {
     return allCourses.get(courseKey)
@@ -96,7 +72,12 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
   // add a course
   const addCourse = (course: Course) => {
     // the keys of the courses have this structure
-    const courseKey = generateCourseKey(course)
+    const courseKey = generateCourseKey(
+      course.getYear(),
+      course.getId(),
+      course.getName(),
+      course.getCareer()
+    )
     // if hasn't been added yet, add it
     if (!allCourses.has(courseKey)) {
       updateCourses((prev) => prev.set(courseKey, course))
@@ -106,7 +87,12 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
 
   // remove a course
   const removeCourse = (course: Course) => {
-    const courseKey = generateCourseKey(course)
+    const courseKey = generateCourseKey(
+      course.getYear(),
+      course.getId(),
+      course.getName(),
+      course.getCareer()
+    )
 
     if (allCourses.has(courseKey)) {
       updateCourses((prev) => {
@@ -165,14 +151,13 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
     return selectedSections.has(section)
   }
 
-  const clearTrackers = () => {
+  const clearSections = () => {
     allCourses.forEach((course: Course) => {
       course.unselectAllSections()
     })
     // empty the sections render list
     setVisibleSections(new Set())
     setSelectedSections(new Set())
-    setAllCourses(new Map())
     resetCredits()
   }
 
@@ -200,7 +185,6 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
       selectedSections: selectedSections,
       visibleSections: visibleSections,
       selectedCoursesCount: selectedCoursesCount,
-      getOrCreateCourse: getOrCreateCourse,
       getCourseInstance: getCourseInstance,
       setCourseVisible: setCourseVisible,
       setCourseInvisible: setCourseInvisible,
@@ -209,7 +193,7 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
       addSections: addSections,
       removeSections: removeSections,
       hasSection: isSectionSelected,
-      clearSections: clearTrackers
+      clearSections: clearSections
     }}>
       {children}
     </CourseCacheContext.Provider>

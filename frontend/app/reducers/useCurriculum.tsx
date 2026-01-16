@@ -57,8 +57,8 @@ export function useCurriculum() {
 
   // trigger fetch on mount
   useEffect(() => {
-    if (!state.data && !state.loading && !state.error) loadData().then()
-  }, [state.data, state.loading, state.error, loadData]);
+    loadData().then()
+  }, [loadData]);
 
   return { ...state, refresh: loadData }
 }
