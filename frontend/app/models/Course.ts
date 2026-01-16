@@ -8,10 +8,11 @@ export class Course {
   private readonly teacher: string;
   private readonly sections: Set<CourseSection>;
   private readonly year: number;
+  private readonly cycle: string;
   private readonly selectedSections: Set<CourseSection>;
   private visible: boolean = true;
 
-  constructor(id: string, name: string, credits: number, teacher: string, career: string, year: number, section?: CourseSection) {
+  constructor(id: string, name: string, credits: number, teacher: string, career: string, year: number, cycle: string, section?: CourseSection) {
     this.id = id
     this.name = name
     this.credits = credits
@@ -19,6 +20,7 @@ export class Course {
     this.career = career
     this.sections = new Set()
     this.year = year
+    this.cycle = cycle
     this.selectedSections = new Set()
     this.visible = true // default visibility is true
     if (section) this.sections.add(section)

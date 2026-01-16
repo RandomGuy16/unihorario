@@ -46,7 +46,8 @@ export const CurriculumService = {
               section.credits,
               section.teacher,
               career.metadata.school,
-              section.year
+              section.year,
+              cycle.cycle
             ))
           }
           registry.get(courseKey)!.addSection(section)
