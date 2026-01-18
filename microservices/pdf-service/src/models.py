@@ -89,9 +89,9 @@ class CourseSection(BaseModel):
     teacher: str
     schedules: List[Schedule]
     credits: int
-    studyPlan: str
+    studyPlan: str = ''
     maxStudents: int
-    courseVisible: bool
+    courseVisible: bool = True
 
 
 class Cycle(BaseModel):
@@ -99,22 +99,26 @@ class Cycle(BaseModel):
     courseSections: List[CourseSection]
 
 
-class Year(BaseModel):
+class CareerCurriculum(BaseModel):
     metadata: CareerCurriculumMetadata
     cycles: List[Cycle]
 
 
-class CareerCurriculum(BaseModel):
+class Year(BaseModel):
+    year: str
+    careerCurriculums: List[CareerCurriculum]
+
+
+class UniversityCurriculum(BaseModel):
     years: List[Year]
 
 
-# here goes the catalog:
-# why are CareerCurriculumMetadata and CareerData different?
-# idk, im going to fix it later on
+# here goes the catalog
 class CareerCatalogData(BaseModel):
     studyPlans: List[str]
     cycles: List[str]
     faculty: str
+    career: str
 
 
 class Catalog(BaseModel):

@@ -9,7 +9,7 @@ import { useSidebar } from "@/app/contexts/useSidebar";
 import { useCourseCache } from "@/app/contexts/useCourseCache";
 import { useFilters } from "@/app/contexts/useFilters";
 import { useCurriculum } from "@/app/reducers/useCurriculum";
-import { createCourseKey } from "@/app/services/CourseCacheService";
+import { generateCourseKey } from "@/app/contexts/useCourseCache";
 
 
 function renderCoursesSidebar(courses: Course[]) {
@@ -34,14 +34,12 @@ function renderCoursesSidebar(courses: Course[]) {
   return courseItemsList
 }
 
-// attributes for CourseList
-
 
 function CourseList() {
   const { data } = useCurriculum()
   const { isMobile } = useResponsive()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-  const { getCourseInstance } = useCourseCache()
+  const { getCourseInstance, allCourses } = useCourseCache()
   const { selection } = useFilters()
 
   const coursesToRender = useMemo(() => {
@@ -53,17 +51,23 @@ function CourseList() {
     const filteredCycles = data!.years
       .filter(y => !selection.year || y.year === selection.year)
       .flatMap(y => y.careerCurriculums)
-      .filter(c => !selection.career || c.name === selection.career)
+      .filter(c => !selection.career || c.metadata.school === selection.career)
       .flatMap(c => c.cycles)
-      .filter(cy => !selection.cycle || cy.name === selection.cycle);
+      .filter(cy => !selection.cycle || cy.cycle === selection.cycle);
 
+    console.log("CourseList::filteredCycles: ", filteredCycles)
+    console.log("useCourseCache::allCourses", allCourses)
     // iterate over all courses in the cycle
     for (const cycle of filteredCycles) {
       for (const section of cycle.courseSections) {
         // create a key to use in the rendered courses tracker
-        const courseKey = createCourseKey({section, career: selection.career})
+        const courseKey = generateCourseKey(
+          section.year,
+          section.assignmentId,
+          section.assignment,
+          selection.career
+        )
         // get the instance of the course in the global course cache
-        // const courseInstance = getOrCreateCourse(courseKey, section, selection.career)
         const courseInstance = getCourseInstance(courseKey)
 
         // push the section to the new course, or last course added
@@ -74,11 +78,11 @@ function CourseList() {
       }
     }
     return filteredCourses
-  }, [data, selection, getCourseInstance])
+  }, [data, selection.year, selection.career, selection.cycle, getCourseInstance, allCourses])
 
   useEffect(() => {
-
-  })
+    renderCoursesSidebar(coursesToRender)
+  }, [coursesToRender])
 
   return (
     <div className={`

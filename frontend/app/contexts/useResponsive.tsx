@@ -1,5 +1,5 @@
 "use client"
-import {createContext, ReactNode, useContext, useEffect, useState} from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
 interface ResponsiveContextType {
   isMobile: boolean;
@@ -13,10 +13,15 @@ interface ResponsiveContextProps {
 }
 export function ResponsiveContextProvider({ children }: ResponsiveContextProps ) {
   // initial check
-  const [isMobile, setIsMobile] = useState<boolean>(window.matchMedia('(max-width: 767px').matches)
+  const [isMobile, setIsMobile] = useState<boolean>(false)
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px')  // <768 for mobile
+
+    // due to next's hydration problems
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMobile(mediaQuery.matches)
+
     // initialize a listener for changes
     const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches)
     mediaQuery.addEventListener('change', handleChange)

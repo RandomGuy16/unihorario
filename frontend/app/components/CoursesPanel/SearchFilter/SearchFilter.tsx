@@ -1,8 +1,9 @@
-import Select, {StylesConfig} from 'react-select'
-import { useState } from 'react'
-import getReactSelectStyles from "@/app/components/CoursesPanel/ReactSelectStyles";
+"use client"
+import Select from 'react-select'
+// import { useState, useEffect } from 'react'
 import { useCourseCache } from "@/app/contexts/useCourseCache";
 import { useFilters } from "@/app/contexts/useFilters";
+import { useTheme } from "@/app/contexts/useTheme";
 
 
 interface selectFilterOption {
@@ -11,14 +12,20 @@ interface selectFilterOption {
 }
 
 function SearchFilter() {
-  const {selection, available: availableFilters, updateSelection} = useFilters()
+  const { selection, available: availableFilters, updateSelection } = useFilters()
   const { clearSections } = useCourseCache()
+  const { getReactSelectStyles } = useTheme()
   // Listen for theme changes
-  const [selectStyles, setSelectStyles] = useState<StylesConfig>(getReactSelectStyles())
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    // Re-render or update styles
-    setSelectStyles(getReactSelectStyles())
-  });
+  const selectStyles = getReactSelectStyles()
+
+  /*
+  useEffect(() => {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      // Re-render or update styles
+      setSelectStyles(getReactSelectStyles())
+    })
+  }, []);
+  */
   return (
     <div className="flex flex-col justify-start items-start w-full">
       {/* separate Select element for each category in filterChooser */}
@@ -29,6 +36,7 @@ function SearchFilter() {
       */}
       <div>
         Carrera: <Select
+          instanceId={"career-select"}
           className="text-base font-normal my-1 mt-0 shadow-lg dark:shadow-md dark:shadow-black"
           styles={selectStyles} // Call the function
           options={
@@ -56,6 +64,7 @@ function SearchFilter() {
       </div>
       <div>
         Ciclo: <Select
+          instanceId={"cycle-select"}
           className="text-base font-normal text-white my-1 shadow-lg dark:shadow-md dark:shadow-black"
           styles={selectStyles}
           options={
@@ -81,6 +90,7 @@ function SearchFilter() {
       </div>
       <div>
         Plan de estudios: <Select
+          instanceId={"plan-select"}
           className="text-base font-normal text-white my-1 mb-0 shadow-lg dark:shadow-md dark:shadow-black"
           styles={selectStyles}
           options={

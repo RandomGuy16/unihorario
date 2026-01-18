@@ -1,3 +1,4 @@
+"use client"
 import { useCallback, useEffect, useReducer } from 'react'
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
@@ -57,8 +58,8 @@ export function useCurriculum() {
 
   // trigger fetch on mount
   useEffect(() => {
-    if (!state.data && !state.loading && !state.error) loadData().then()
-  }, [state.data, state.loading, state.error, loadData]);
+    loadData().then()
+  }, [loadData]);
 
   return { ...state, refresh: loadData }
 }
