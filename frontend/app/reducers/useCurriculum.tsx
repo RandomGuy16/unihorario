@@ -1,3 +1,4 @@
+"use client"
 import { useCallback, useEffect, useReducer } from 'react'
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
