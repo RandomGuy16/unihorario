@@ -2,8 +2,8 @@ import json
 import pathlib as path
 import pdfplumber
 import os
-from config import PDF_DIR, JSON_DIR
-from src.models.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
+from config import PDF_DIR_PATH, CAREERS_DIR_PATH
+from src.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
     UniversityCurriculum
 from typing import List
 
@@ -47,9 +47,9 @@ def bundle_tables(pdf_file: pdfplumber.PDF):
     return full_tables
 
 
-def write_json(json_file: path.Path, career: CareerCurriculum):
-    if not os.path.exists(JSON_DIR):
-        os.mkdir(JSON_DIR)
+def write_json(json_file: path.Path, career: UniversityCurriculum):
+    if not os.path.exists(CAREERS_DIR_PATH):
+        os.makedirs(CAREERS_DIR_PATH)
     with open(json_file, "w") as f:
         json.dump(career.model_dump(), f, indent=4, ensure_ascii=False)
 
@@ -113,13 +113,13 @@ def _parse_pdf_sync(pdf_file: path.Path):
             out.years[-1].careerCurriculums[-1].cycles.append(curr_cycle)
 
         # debug here
-    write_json(path.Path(JSON_DIR, f"{metadata.school}.json"), out)
+    write_json(path.Path(CAREERS_DIR_PATH, f"{metadata.school}.json"), out)
     return out
 
 
 def main():
     # convert all files in pdf/
-    pdf_files = list(path.Path(PDF_DIR).glob("*.pdf"))
+    pdf_files = list(path.Path(PDF_DIR_PATH).glob("*.pdf"))
     for file in pdf_files:
         _parse_pdf_sync(file)
 

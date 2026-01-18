@@ -113,13 +113,12 @@ class UniversityCurriculum(BaseModel):
     years: List[Year]
 
 
-# here goes the catalog:
-# why are CareerCurriculumMetadata and CareerData different?
-# idk, im going to fix it later on
+# here goes the catalog
 class CareerCatalogData(BaseModel):
     studyPlans: List[str]
     cycles: List[str]
     faculty: str
+    career: str
 
 
 class Catalog(BaseModel):
