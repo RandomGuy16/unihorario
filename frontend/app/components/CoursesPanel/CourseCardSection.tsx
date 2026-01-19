@@ -41,8 +41,8 @@ export default function CourseCardSection({ course, section, colorPair, checked,
   return (
     <div
       key={``}
-      className='w-full flex flex-row justify-between items-center py-1 px-2 mt-1 font-normal text-[0.5rem] sm:text-[0.625rem] lg:text-xs duration-100 ease-linear select-none
-      rounded-md shadow-lg border'
+      className='w-full flex flex-row justify-between items-center py-1 px-2 mt-1 font-normal text-micro sm:text-caption lg:text-body duration-100 ease-linear select-none
+      rounded-md shadow-elev-1 border'
       style={{
         borderColor: colorPair.text,
         color: `${checked ? colorPair.background : colorPair.text}`,
@@ -60,8 +60,7 @@ export default function CourseCardSection({ course, section, colorPair, checked,
           Secci&oacute;n {section.sectionNumber}<br />Profesor: {section.teacher}<br />Tope de alumnos: {section.maxStudents}
           {section.schedules.map((schedule, index) => (
             <span
-              key={`${index} ${schedule.scheduleNumber}`}
-              className="text-[0.5rem] sm:text-[0.625rem] lg:text-xs">
+              key={`${index} ${schedule.scheduleNumber}`}>
               <br />
               {schedule.day} {schedule.start} - {schedule.end}
             </span>

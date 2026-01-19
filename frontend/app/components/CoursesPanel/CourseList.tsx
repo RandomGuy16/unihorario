@@ -87,7 +87,7 @@ function CourseList() {
   return (
     <div className={`
       w-full h-full mx-auto p-4 rounded-r-lg flex flex-col justify-start items-stretch
-      shadow-lg bg-white dark:bg-neutral-800 dark:shadow-md dark:shadow-black
+      shadow-elev-2 bg-surface
       transform transition-transform duration-300 ease-in-out
       ${(isMobile)
         ? `fixed top-0 left-0 max-w-sm z-50 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
@@ -100,26 +100,25 @@ function CourseList() {
           content: (
             <>
               <div className="flex flex-row justify-between items-center">
-                <h2 className="inline-block ml-2 font-normal text-lg">Tus cursos</h2>
+                <h2 className="inline-block ml-2 text-title">Tus cursos</h2>
                 {(isMobile) && <button
-                  className="text-lg my-2 ml-4 px-2 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  className="text-title my-2 ml-4 px-2 rounded-xl hover:bg-surface-muted"
                   onClick={() => toggleSidebar()}>
                   {'>'}
                 </button>}
 
               </div>
 
-              <section className="text-base w-full h-fit my-4">
-                <span className="inline-block font-normal mb-2">Filtrar por:</span>
+              <section className="text-label w-full h-fit my-4">
+                <span className="inline-block mb-2">Filtrar por:</span>
                 <SearchFilter/>
               </section>
               <section className="flex flex-col justify-start items-stretch w-full min-h-20 h-fit my-4">
-                <span className="inline-block font-normal mb-2">Cursos</span>
+                <span className="inline-block text-label mb-2">Cursos</span>
                 <div
                   className="flex flex-col justify-start items-center flex-1 p-2
-                    border-2 border-neutral-200 dark:border-neutral-700 rounded-lg overflow-y-auto
-                    scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100
-                    dark:scrollbar-thumb-gray-700 dark:scrollbar-track-gray-800"
+                    border-2 border-border rounded-md overflow-y-auto
+                    scrollbar-thin scrollbar-thumb-[rgb(var(--color-border))] scrollbar-track-[rgb(var(--color-surface-muted))]"
                 >
                   {data && renderCoursesSidebar(coursesToRender)}
                 </div>

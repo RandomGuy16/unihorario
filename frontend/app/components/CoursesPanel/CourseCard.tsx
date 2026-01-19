@@ -36,8 +36,8 @@ function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: Co
     <div className="flex flex-row justify-start items-center">
       <label
         className={
-          `py-1 px-2 mr-1 font-normal text-[0.5rem] sm:text-[0.625rem] lg:text-xs duration-100 ease-linear select-none
-         rounded-md shadow-lg border`
+          `py-1 px-2 mr-1 font-normal text-micro sm:text-caption lg:text-body duration-100 ease-linear select-none
+         rounded-md shadow-elev-1 border`
         }
         data-checked={checked}
         style={{
@@ -82,7 +82,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
   const { theme } = useTheme()
   const { setCourseInvisible, setCourseVisible } = useCourseCache()
 
-  // state variable to swtich the dropdown menu
+  // state variable to switch the dropdown menu
   const [isOpen, setIsOpen] = useState(false)
 
   // set to track locally selected sections (per course)
@@ -104,8 +104,8 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
   return (
     <div
       className="
-      flex-1 w-full font-normal text-left text-xs lg:text-md my-2 border rounded-md py-2 px-4
-      shadow-lg dark:shadow-md dark:shadow-black select-none
+      flex-1 w-full text-left text-body my-2 border rounded-md py-2 px-4
+      shadow-elev-2 select-none
       transform transition-all duration-300 ease-in-out"
       id={course.getId()}
       style={{
@@ -116,7 +116,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
     >
       <div className="flex flex-row justify-between items-start w-full">
         <div className="flex-1 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
-          <h3 className="text-sm lg:text-base">{course.getName()}</h3>
+          <h3 className="text-label lg:text-title">{course.getName()}</h3>
           <span className="">créditos: {course.getCredits()}<br />{course.getCareer()}</span>
         </div>
         <div className="flex flex-col justify-center items-center gap-2">
@@ -161,7 +161,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
           <div
             className="
           flex flex-col justify-start items-center mt-1 w-full overflow-x-auto scrollbar-thin
-          scrollbar-thumb-gray-300/50 scrollbar-track-gray-100/100 dark:scrollbar-thumb-gray-700/50 dark:scrollbar-track-gray-800/100">
+          scrollbar-thumb-[rgb(var(--color-border))] scrollbar-track-[rgb(var(--color-surface-muted))]">
             {/* creates a button for every group in classGroups */}
             {course.getSections().map((section: CourseSection, index: number) =>
               <CourseCardSection
@@ -183,4 +183,3 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
 }
 
 export default CourseCard;
-

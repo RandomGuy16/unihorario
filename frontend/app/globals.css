@@ -2,8 +2,6 @@
 
 /* Reset and base styles */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
@@ -13,8 +11,7 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: rgb(var(--color-foreground));
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,23 +19,96 @@
   -moz-osx-font-smoothing: grayscale;
   box-sizing: border-box;
 
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colors as RGB triplets for opacity support */
+  --color-background: 255 255 255;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 237 242 247;
+  --color-foreground: 17 24 39;
+  --color-foreground-muted: 71 85 105;
+  --color-border: 226 232 240;
+  --color-border-strong: 148 163 184;
+  --color-accent: 59 130 246;
+  --color-action-primary: 59 130 246;
+  --color-action-success: 16 185 129;
+  --color-on-action: 255 255 255;
+
+  /* Radius / shadow */
+  --radius-md: 12px;
+  --shadow-elev-1: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-elev-2: 0 6px 18px rgba(0,0,0,0.12);
+
+  /* Font sizes */
+  --text-heading: 1.25rem;
+  --text-title: 1rem;
+  --text-label: 0.875rem;
+  --text-control: 0.8125rem;
+  --text-body: 0.75rem;
+  --text-caption: 0.625rem;
+  --text-micro: 0.5rem;
+}
+[data-theme="dark"] {
+  --color-background: 10 10 10;
+  --color-surface: 17 17 17;
+  --color-surface-muted: 31 41 55;
+  --color-foreground: 243 244 246;
+  --color-foreground-muted: 203 213 225;
+  --color-border: 55 65 81;
+  --color-border-strong: 75 85 99;
+  --color-accent: 96 165 250;
+  --color-action-primary: 59 130 246;
+  --color-action-success: 16 185 129;
+  --color-on-action: 255 255 255;
+
+  --shadow-elev-1: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-elev-2: 0 8px 20px rgba(0,0,0,0.55);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-background: rgb(var(--color-background));
+  --color-surface: rgb(var(--color-surface));
+  --color-surface-muted: rgb(var(--color-surface-muted));
+  --color-foreground: rgb(var(--color-foreground));
+  --color-foreground-muted: rgb(var(--color-foreground-muted));
+  --color-border: rgb(var(--color-border));
+  --color-border-strong: rgb(var(--color-border-strong));
+  --color-accent: rgb(var(--color-accent));
+  --color-action-primary: rgb(var(--color-action-primary));
+  --color-action-success: rgb(var(--color-action-success));
+  --color-on-action: rgb(var(--color-on-action));
+
+  --shadow-elev-1: var(--shadow-elev-1);
+  --shadow-elev-2: var(--shadow-elev-2);
+
+  --radius-md: var(--radius-md);
+
+  --text-heading: var(--text-heading);
+  --text-title: var(--text-title);
+  --text-label: var(--text-label);
+  --text-control: var(--text-control);
+  --text-body: var(--text-body);
+  --text-caption: var(--text-caption);
+  --text-micro: var(--text-micro);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme]) {
+    --color-background: 10 10 10;
+    --color-surface: 17 17 17;
+    --color-surface-muted: 31 41 55;
+    --color-foreground: 243 244 246;
+    --color-foreground-muted: 203 213 225;
+    --color-border: 55 65 81;
+    --color-border-strong: 75 85 99;
+    --color-accent: 96 165 250;
+    --color-action-primary: 59 130 246;
+    --color-action-success: 16 185 129;
+    --color-on-action: 255 255 255;
   }
 }
+
 
 html {
   min-height: 100%;
@@ -47,10 +117,9 @@ html {
 }
 
 body {
-  /*
-  background: var(--background);
-  color: var(--foreground);
-  */
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  /* color: var(--foreground); */
   display: flex;
   flex-direction: column;
   place-items: center;
@@ -59,8 +128,6 @@ body {
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
-  margin: 0;
-  padding: 0;
 }
 
 #root {
@@ -71,24 +138,12 @@ body {
   min-height: 100vh;
 }
 
-/* Light mode styles */
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-}
-
 /* App.tsx grid */
-
-.calendar-layout {
-  display: grid;
-  min-height: 100vh;
-  column-gap: 2rem;
-}
-
 /* Mobile */
 .calendar-layout {
+  display: grid;
+  width: 100%;
+  min-height: 100vh;
   grid-template-columns: 1fr;
   column-gap: 0;
   grid-template-areas:
@@ -127,4 +182,3 @@ body {
 .area-main { grid-area: main; }
 .area-sidebar { grid-area: sidebar; }
 .area-footer { grid-area: footer; }
-

@@ -137,10 +137,10 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
 
   return (
     <div className="flex flex-col p-2 h-full w-full">
-      <h2 className="text-xl">Horario</h2>
+      <h2 className="text-heading">Horario</h2>
       {/* Schedule metrics */}
       <div className="flex flex-1 flex-row justify-between items-center w-full">
-        <div className="mx-2 font-normal text-normal">
+        <div className="mx-2 text-body">
           <div>
             <span>Cursos: {selectedCoursesCount}</span><br />
             <span>Créditos: {credits}</span>
@@ -152,32 +152,32 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
             Light theme: #2563EB (blue-600)
             Dark theme: #3B82F6 (blue-500) */}
         <div className="mx-2 flex flex-row justify-end items-start">
-          <span className="mx-1 my-2 text-sm text-black dark:text-white">Exportar:</span>
+          <span className="mx-1 my-2 text-label text-foreground">Exportar:</span>
           <div className='flex flex-col justify-center items-start'>
             <button
               className="
-          py-2 px-4 mx-1 mb-2 border-none rounded-lg shadow-md dark:shadow-black
-          text-black bg-blue-400 dark:bg-blue-500 dark:text-white"
+          py-2 px-4 mx-1 mb-2 border-none rounded-lg shadow-elev-1
+          text-on-action bg-action-primary"
               export-type="image"
               onClick={() => exportImage()}>
-              <Image aria-label={"idk"} className="inline text-xs mr-1" />
-              <span className="text-sm">imagen</span>
+              <Image aria-label={"idk"} className="inline text-caption mr-1" />
+              <span className="text-label">imagen</span>
             </button>
             <button
               className="
             flex flex-row justify-center items-center
-          py-2 px-4 mx-1 border-none rounded-lg shadow-md dark:shadow-black
-          text-black bg-emerald-400 dark:text-white dark:bg-emerald-500"
+          py-2 px-4 mx-1 border-none rounded-lg shadow-elev-1
+          text-on-action bg-action-success"
               export-type="excel"
               onClick={() => exportToExcel()}>
-              <Sheet className="inline text-xs mr-1" />
-              <span className="text-sm">excel</span>
+              <Sheet className="inline text-caption mr-1" />
+              <span className="text-label">excel</span>
             </button>
           </div>
         </div>
       </div>
-      <div className="flex flex-row justify-between items-center flex-1 mx-2 my-4 p-2 rounded-lg bg-gray-300 dark:bg-gray-700">
-        <span className="mx-2 text-sm text-neutral-800 dark:text-white">
+      <div className="flex flex-row justify-between items-center flex-1 mx-2 my-4 p-2 rounded-lg bg-surface-muted">
+        <span className="mx-2 text-body text-foreground-muted">
           Actualizaci&oacute;n: Sistemas 03/08 22:44
         </span>
         {/* <a */}

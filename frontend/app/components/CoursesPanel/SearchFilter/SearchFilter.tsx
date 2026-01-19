@@ -37,7 +37,7 @@ function SearchFilter() {
       <div>
         Carrera: <Select
           instanceId={"career-select"}
-          className="text-base font-normal my-1 mt-0 shadow-lg dark:shadow-md dark:shadow-black"
+          className="text-label my-1 mt-0 shadow-elev-1"
           styles={selectStyles} // Call the function
           options={
             availableFilters.careers.map(filterOption => ({
@@ -65,7 +65,7 @@ function SearchFilter() {
       <div>
         Ciclo: <Select
           instanceId={"cycle-select"}
-          className="text-base font-normal text-white my-1 shadow-lg dark:shadow-md dark:shadow-black"
+          className="text-label my-1 shadow-elev-1"
           styles={selectStyles}
           options={
             availableFilters.cycles.map(filterOption => ({
@@ -91,7 +91,7 @@ function SearchFilter() {
       <div>
         Plan de estudios: <Select
           instanceId={"plan-select"}
-          className="text-base font-normal text-white my-1 mb-0 shadow-lg dark:shadow-md dark:shadow-black"
+          className="text-label my-1 mb-0 shadow-elev-1"
           styles={selectStyles}
           options={
             availableFilters.years.map(filterOption => ({

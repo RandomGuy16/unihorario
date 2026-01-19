@@ -95,8 +95,7 @@ function ScheduleGrid() {
   const fridayData = filteredData[4]
   const saturdayData = filteredData[5]
 
-  // hook used to render every selected CourseSection
-  // meant to run every time the user updates its selection
+  const eventsColumnStyles = "flex flex-1 flex-col justify-start items-center relative h-full border-l border-border-strong"
 
   return (
     <div className="flex flex-col justify-start items-stretch w-full my-4">
@@ -111,11 +110,11 @@ function ScheduleGrid() {
       </div>
       <div className="
         flex flex-col justify-start items-stretch w-full relative
-        bg-white dark:bg-neutral-800 rounded-xl shadow-lg dark:shadow-md dark:shadow-black"
+        bg-surface rounded-xl shadow-elev-2"
         id="calendar-grid">
         <div className="
         flex flex-8 flex-row justify-evenly items-center w-full max-h-6 rounded-t-xl font-light
-        text-black bg-gray-200 dark:text-white dark:bg-gray-800 cursor-default">
+        text-foreground bg-surface-muted cursor-default">
           <div className="flex flex-1 max-w-12 md:max-w-12 lg:max-w-16 flex-col justify-evenly items-center"></div>
           {["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"].map(
             (day, i) => (<div key={i} className="m-auto text-center flex-1">{day}</div>)
@@ -125,26 +124,19 @@ function ScheduleGrid() {
           <div className="flex flex-1 max-w-12 md:max-w-12 lg:max-w-16 flex-col justify-evenly items-stretch text-right">
             {["08", "09", 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(
               (hour, i) => (<div key={i} className="
-                h-20 p-1 border-t border-neutral-400 dark:border-neutral-600 text-black dark:text-white
-                text-right text-[0.5rem] md:text-[0.625rem] lg:text-xs">{`${hour}:00`}</div>)
+                h-20 p-1 border-t border-border-strong text-foreground
+                text-right text-micro md:text-caption lg:text-body">{`${hour}:00`}</div>)
             )}
           </div>
           <div className="flex flex-7 flex-row justify-evenly items-center h-full"
             id='calendar-appointments'>
-            <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
-              id={MONDAY_ID}>{mondayData.eventCards}</div>
-            <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
-              id={TUESDAY_ID}>{tuesdayData.eventCards}</div>
-            <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
-              id={WEDNESDAY_ID}>{wednesdayData.eventCards}</div>
-            <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
-              id={THURSDAY_ID}>{thursdayData.eventCards}</div>
-            <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
-              id={FRIDAY_ID}>{fridayData.eventCards}</div>
-            <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
-              id={SATURDAY_ID}>{saturdayData.eventCards}</div>
-            <div className="flex flex-1 flex-col justify-start items-center relative h-full border-l border-neutral-400 dark:border-neutral-600"
-              id={SUNDAY_ID}></div>
+            <div className={eventsColumnStyles} id={MONDAY_ID}>{mondayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={TUESDAY_ID}>{tuesdayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={WEDNESDAY_ID}>{wednesdayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={THURSDAY_ID}>{thursdayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={FRIDAY_ID}>{fridayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={SATURDAY_ID}>{saturdayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={SUNDAY_ID}></div>
           </div>
         </div>
       </div>

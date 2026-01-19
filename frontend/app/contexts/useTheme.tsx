@@ -15,81 +15,76 @@ export function ThemeContextProvider({children} : {children: ReactNode}) {
   // manage dark and light theme colors
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
 
+  // Initialize theme and setup system theme listener
   useEffect(() => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    // Initialize theme from localStorage or system preference
     const savedTheme = localStorage.getItem('theme')
-
-    const initialTheme = savedTheme as ('light' | 'dark') || (isDark ? 'dark' : 'light')
+    const initialTheme = savedTheme as ('light' | 'dark') || (mediaQuery.matches ? 'dark' : 'light')
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initialTheme)
+
+    // Listen for system theme changes
+    const handleThemeChange = (e: MediaQueryListEvent) => {
+      const newTheme = e.matches ? 'dark' : 'light'
+      setTheme(newTheme)
+      localStorage.setItem('theme', newTheme)
+    }
+    mediaQuery.addEventListener('change', handleThemeChange)
+    return () => mediaQuery.removeEventListener('change', handleThemeChange)
   }, []);
 
+  // Apply theme to DOM and save to localStorage
   useEffect(() => {
     if (!theme) return
 
     const root = window.document.documentElement
 
-    if (theme === 'dark') {
-      root.classList.add('dark')
-    } else {
-      root.classList.remove('dark')
-    }
+    if (theme === 'dark') root.setAttribute('data-theme', 'dark')
+    else root.removeAttribute('data-theme')
 
     localStorage.setItem('theme', theme)
   }, [theme])
 
+  // toggle theme, idk when am I going to use this
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
+  const readVar = (name: string) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
   const getReactSelectStyles = (): StylesConfig => {
-    const isDark = theme == 'dark';
+    const surface = `rgb(${readVar("--color-surface")})`;
+    const border = `rgb(${readVar("--color-border")})`;
+    const surfaceMuted = `rgb(${readVar("--color-surface-muted")})`;
+    const text = `rgb(${readVar("--color-foreground")})`;
+    const accent = `rgb(${readVar("--color-accent")})`;
+    const fontSize = readVar("--text-control") || "0.8125rem";
 
     return {
-      control: (baseStyles, state) => ({
-        ...baseStyles,
-        backgroundColor: isDark ? "#404040" : "#ffffff",
-        border: `1px solid ${isDark ? "transparent" : "#d1d5db"}`,
-        boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
-        color: isDark ? "white" : "#1f2937",
-        "&:hover": {
-          borderColor: isDark ? "rgb(90, 90, 90)" : "#9ca3af",
-        },
+      control: (base, state) => ({
+        ...base,
+        backgroundColor: surface,
+        border: `1px solid ${border}`,
+        boxShadow: state.isFocused ? `0 0 0 1px ${accent}` : "none",
+        color: text,
+        fontSize: fontSize,
       }),
-
-      menu: (baseStyles) => ({
-        ...baseStyles,
-        backgroundColor: isDark ? "#303030" : "#ffffff",
-        boxShadow: isDark
-          ? "0 4px 8px rgba(0, 0, 0, 0.3)"
-          : "0 4px 8px rgba(0, 0, 0, 0.1)",
+      menu: (base) => ({
+        ...base,
+        backgroundColor: surface,
         zIndex: 9999,
       }),
-
-      option: (baseStyles, state) => ({
-        ...baseStyles,
-        backgroundColor: state.isFocused
-          ? (isDark ? "#4b5563" : "#f3f4f6")
-          : "transparent",
-        color: isDark ? "white" : "#1f2937",
+      option: (base, state) => ({
+        ...base,
+        backgroundColor: state.isFocused ? surfaceMuted : "transparent",
+        color: text,
         cursor: "pointer",
+        fontSize: fontSize,
       }),
-
-      singleValue: (baseStyles) => ({
-        ...baseStyles,
-        color: isDark ? "white" : "#1f2937",
-      }),
-
-      input: (baseStyles) => ({
-        ...baseStyles,
-        color: isDark ? "white" : "#1f2937",
-      }),
-
-      // Keep these minimal useful ones
-      indicatorSeparator: () => ({display: "none"}),
-
-      dropdownIndicator: (baseStyles) => ({
-        ...baseStyles,
-        color: "#3b82f6",
-      }),
+      singleValue: (base) => ({ ...base, color: text }),
+      input: (base) => ({ ...base, color: text }),
+      indicatorSeparator: () => ({ display: "none" }),
+      dropdownIndicator: (base) => ({ ...base, color: accent }),
     };
   };
 
@@ -107,4 +102,3 @@ export function useTheme() {
   }
   return context
 }
-

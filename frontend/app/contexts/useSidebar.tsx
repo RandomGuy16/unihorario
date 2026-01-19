@@ -21,6 +21,7 @@ export function SidebarContextProvider({ children }: SidebarProviderProps) {
 
   useEffect(() => {
     if (isMobile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsSidebarOpen(false)
     }
   }, [isMobile])
@@ -30,7 +31,7 @@ export function SidebarContextProvider({ children }: SidebarProviderProps) {
   const closeSidebar = () => setIsSidebarOpen(false)
 
   return (
-    <SidebarContext.Provider value={{isSidebarOpen, toggleSidebar, openSidebar, closeSidebar}}>
+    <SidebarContext.Provider value={{ isSidebarOpen, toggleSidebar, openSidebar, closeSidebar }}>
       {children}
     </SidebarContext.Provider>
   )

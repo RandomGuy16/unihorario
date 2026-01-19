@@ -33,7 +33,7 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
 
   return (
     <div className="
-      absolute p-1 min-h-20 w-full rounded-lg border-2 text-ellipsis text-[0.5rem] md:text-[0.625rem] lg:text-xs"
+      absolute p-1 min-h-20 w-full rounded-lg border-2 text-ellipsis text-micro md:text-caption lg:text-body"
       style={{
         top: positionStyle.top,
         height: positionStyle.height,
@@ -54,4 +54,3 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
 
 
 export default ScheduleEventCard
-
