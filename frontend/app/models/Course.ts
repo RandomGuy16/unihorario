@@ -1,4 +1,4 @@
-import {CourseSection} from "@/app/models/CourseSection";
+import { CourseSection } from "@/app/models/CourseSection";
 
 export class Course {
   private readonly id: string;
@@ -101,6 +101,10 @@ export class Course {
 
   getCareer(): string {
     return this.career
+  }
+
+  getCycle(): string {
+    return this.cycle
   }
 
   getYear(): number {
