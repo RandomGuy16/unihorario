@@ -32,7 +32,7 @@ interface CourseCacheContextType extends SectionSelectionOps {
 
 const CourseCacheContext = createContext<CourseCacheContextType | undefined>(undefined)
 
-export function CourseCacheContextProvider({children}: {children: ReactNode}) {
+export function CourseCacheContextProvider({ children }: { children: ReactNode }) {
   const { courseRegistry } = useCurriculum()
   const { addCredits, restCredits, resetCredits } = useCredits()
   const [allCourses, setAllCourses] = useState<Map<string, Course>>(() => courseRegistry || new Map<string, Course>())
@@ -70,14 +70,15 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
   }
 
   // add a course
-  const addCourse = (course: Course) => {
+  const _addCourse = (course: Course) => {
     // the keys of the courses have this structure
     const courseKey = generateCourseKey(
-      course.getYear(),
+      course.getStudyPlan(),
       course.getId(),
       course.getName(),
-      course.getCareer()
+      course.getSchool()
     )
+    console.log(allCourses)
     // if hasn't been added yet, add it
     if (!allCourses.has(courseKey)) {
       updateCourses((prev) => prev.set(courseKey, course))
@@ -86,12 +87,12 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
   }
 
   // remove a course
-  const removeCourse = (course: Course) => {
+  const _removeCourse = (course: Course) => {
     const courseKey = generateCourseKey(
-      course.getYear(),
+      course.getStudyPlan(),
       course.getId(),
       course.getName(),
-      course.getCareer()
+      course.getSchool()
     )
 
     if (allCourses.has(courseKey)) {
@@ -108,7 +109,7 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
   // add a section
   const addSections = (sections: CourseSection | CourseSection[], course: Course) => {
     sections = Array.isArray(sections) ? sections : [sections]
-    if (course.areAllSectionsUnselected()) addCourse(course)
+    if (course.areAllSectionsUnselected()) _addCourse(course)
 
     // set both sections tracker
     sections.forEach(section => {
@@ -142,9 +143,9 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
       return prev
     })
 
-    if (course.areAllSectionsUnselected()) {
-      removeCourse(course)
-    }
+    // if (course.areAllSectionsUnselected()) {
+    //   _removeCourse(course)
+    // }
   }
 
   const isSectionSelected = (section: CourseSection) => {
@@ -169,6 +170,8 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
       })
       return prev
     })
+
+    course.setVisibility(false)
   }
   const setCourseVisible = (course: Course) => {
     updateVisibleSections(prev => {
@@ -177,6 +180,7 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
       })
       return prev
     })
+    course.setVisibility(true)
   }
 
   return (
@@ -188,8 +192,8 @@ export function CourseCacheContextProvider({children}: {children: ReactNode}) {
       getCourseInstance: getCourseInstance,
       setCourseVisible: setCourseVisible,
       setCourseInvisible: setCourseInvisible,
-      addCourse: addCourse,
-      removeCourse: removeCourse,
+      addCourse: _addCourse,
+      removeCourse: _removeCourse,
       addSections: addSections,
       removeSections: removeSections,
       hasSection: isSectionSelected,

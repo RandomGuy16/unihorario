@@ -122,7 +122,7 @@ function ScheduleGrid() {
         </div>
         <div className="flex flex-8 flex-row justify-evenly items-start overscroll-y-auto h-full">
           <div className="flex flex-1 max-w-12 md:max-w-12 lg:max-w-16 flex-col justify-evenly items-stretch text-right">
-            {["08", "09", 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(
+            {["08", "09", 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].map(
               (hour, i) => (<div key={i} className="
                 h-20 p-1 border-t border-border-strong text-foreground
                 text-right text-micro md:text-caption lg:text-body">{`${hour}:00`}</div>)

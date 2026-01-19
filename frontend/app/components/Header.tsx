@@ -10,7 +10,7 @@ function Header() {
   return (
     <>
       <header className="area-header sticky flex flex-row justify-between items-center w-full top-0 z-30 h-20 p-1 bg-surface
-      shadow-elev-1">
+      shadow-elev-1 select-none">
         <div className="flex flex-row justify-between items-center ml-6">
           {isMobile &&
             <button

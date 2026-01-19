@@ -47,8 +47,8 @@ function CourseList() {
     console.log("CourseList::allCourses: ", allCourses)
 
     return allCourses.values().filter((course) => {
-      const sameYear = course.getYear().toString() === selection.year
-      const sameCareer = course.getCareer() === selection.career
+      const sameYear = course.getStudyPlan().toString() === selection.year
+      const sameCareer = course.getSchool() === selection.career
       const sameCycle = course.getCycle() === selection.cycle
       return sameYear && sameCareer && sameCycle
     }).toArray()

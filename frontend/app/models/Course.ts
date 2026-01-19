@@ -3,23 +3,23 @@ import { CourseSection } from "@/app/models/CourseSection";
 export class Course {
   private readonly id: string;
   private readonly name: string;
-  private readonly career: string;
+  private readonly school: string;
   private readonly credits: number;
-  private readonly teacher: string;
+  private readonly teachers: string[];
   private readonly sections: Set<CourseSection>;
-  private readonly year: number;
+  private readonly studyPlan: string;
   private readonly cycle: string;
   private readonly selectedSections: Set<CourseSection>;
   private visible: boolean = true;
 
-  constructor(id: string, name: string, credits: number, teacher: string, career: string, year: number, cycle: string, section?: CourseSection) {
+  constructor(id: string, name: string, credits: number, teacher: string[], school: string, studyPlan: string, cycle: string, section?: CourseSection) {
     this.id = id
     this.name = name
     this.credits = credits
-    this.teacher = teacher
-    this.career = career
+    this.teachers = teacher
+    this.school = school
     this.sections = new Set()
-    this.year = year
+    this.studyPlan = studyPlan
     this.cycle = cycle
     this.selectedSections = new Set()
     this.visible = true // default visibility is true
@@ -95,20 +95,20 @@ export class Course {
     return this.credits
   }
 
-  getTeacher(): string {
-    return this.teacher
+  getTeachers(): string[] {
+    return this.teachers
   }
 
-  getCareer(): string {
-    return this.career
+  getSchool(): string {
+    return this.school
   }
 
   getCycle(): string {
     return this.cycle
   }
 
-  getYear(): number {
-    return this.year
+  getStudyPlan(): string {
+    return this.studyPlan
   }
 
 }

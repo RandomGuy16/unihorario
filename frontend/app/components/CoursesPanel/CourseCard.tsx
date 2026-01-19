@@ -15,18 +15,15 @@ interface CourseCardCheckboxAllProps {
   setAllChecked: (val: boolean) => void;
 }
 function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: CourseCardCheckboxAllProps) {
-  const sectionOps = useCourseCache()
+  const { addSections, removeSections } = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
     if (!checked) {
-      sectionOps.addSections(course.getSections(), course)
-      course.selectAllSections()
+      addSections(course.getSections(), course)
     }
     else {
       // update the global trackers
-      sectionOps.removeSections(course.getSections(), course)
-      // update the course
-      course.unselectAllSections()
+      removeSections(course.getSections(), course)
     }
     // setChecked runs at last because it takes a moment to update its value
     setAllChecked(!checked)
@@ -52,16 +49,6 @@ function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: Co
           onChange={handleClick} />
         todas
       </label>
-      {/* <button */}
-      {/*   onClick={() => { */}
-      {/*     course.setAllSectionsVisible(!allVisible) */}
-      {/*     setAllVisible(prev => !prev) */}
-      {/*   }}> */}
-      {/*   {allVisible */}
-      {/*     ? <Eye className="w-4 h-4 m-2" style={{ color: colorPair.text }} /> */}
-      {/*     : <EyeOff className="w-4 h-4 m-2" style={{ color: colorPair.text }} /> */}
-      {/*   } */}
-      {/* </button> */}
     </div>
   )
 }
@@ -97,7 +84,6 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
     if (isCourseVisible) setCourseInvisible(course)
     else setCourseVisible(course)
 
-    course.setVisibility(!course.getVisibility())
     setIsCourseVisible(!isCourseVisible)
   }
 
@@ -114,49 +100,47 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
         borderColor: `${textColor}${isCourseVisible ? "FF" : "AA"}`
       }}
     >
-      <div className="flex flex-row justify-between items-start w-full">
-        <div className="flex-1 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+      <div className="flex flex-row justify-between items-start w-full cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+        <div className="flex-1" >
           <h3 className="text-label lg:text-title">{course.getName()}</h3>
-          <span className="">créditos: {course.getCredits()}<br />{course.getCareer()}</span>
+          <span className="">créditos: {course.getCredits()}<br />{course.getSchool()}</span>
         </div>
         <div className="flex flex-col justify-center items-center gap-2">
-          <button
-            className="flex-1"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? (
-              <ChevronDown className="h-4 w-4 mt-2" style={{ color: textColor }} />
-            ) : (
-              <ChevronRight className="h-4 w-4 mt-2" style={{ color: textColor }} />
-            )}
-          </button>
-          <button className="h-4"
-            onClick={() => handleCourseVisibility()}
-          >
-            {isCourseVisible ? (
-              <Eye className="w-4 h-4" style={{ color: textColor }} />
-            ) : (
-              <EyeOff className="w-4 h-4" style={{ color: textColor }} />
-            )}
-          </button>
+          {isOpen ? (
+            <ChevronDown className="h-4 w-4 mt-2" style={{ color: textColor }} />
+          ) : (
+            <ChevronRight className="h-4 w-4 mt-2" style={{ color: textColor }} />
+          )}
         </div>
       </div>
 
-
+      {/* This maps the sections so we can click them */}
       {isOpen && (
         <>
           <hr className="mb-2" style={{ borderColor: textColor }} />
           <div className="flex flex-row justify-between items-center mb-1">
-            <span className="">Añadir secciones:</span>
-            <CourseCardCheckboxAll
-              course={course}
-              colorPair={{
-                background: bgColor,
-                text: textColor
-              }}
-              checked={areAllChecked}
-              setAllChecked={setAreAllChecked}>
-            </CourseCardCheckboxAll>
+            <div className='flex flex-row items-center gap-1'>
+              <span>Añadir secciones:</span>
+              <CourseCardCheckboxAll
+                course={course}
+                colorPair={{
+                  background: bgColor,
+                  text: textColor
+                }}
+                checked={areAllChecked}
+                setAllChecked={setAreAllChecked}>
+              </CourseCardCheckboxAll>
+            </div>
+            {/* </button> */}
+            <button className="h-4"
+              onClick={() => handleCourseVisibility()}
+            >
+              {isCourseVisible ? (
+                <Eye className="w-4 h-4" style={{ color: textColor }} />
+              ) : (
+                <EyeOff className="w-4 h-4" style={{ color: textColor }} />
+              )}
+            </button>
           </div>
           <div
             className="
@@ -177,8 +161,9 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
               </CourseCardSection>
             )}
           </div>
-        </>)}
-    </div>
+        </>)
+      }
+    </div >
   )
 }
 

@@ -20,7 +20,6 @@ export const CurriculumService = {
 
   createCourseRegistry(data: UniversityCurriculum) {
     const registry = new Map<string, Course>()
-
     const careers = data.years
       .flatMap(y => y.careerCurriculums)
 
@@ -31,10 +30,12 @@ export const CurriculumService = {
       const cycles = career.cycles
       for (const cycle of cycles) {
         for (const section of cycle.courseSections) {
+          const teachers = new Set<string>()
+          section.schedules.map(schedule => teachers.add(schedule.teacher))
           // create a key to use in the rendered courses tracker
           // const courseKey = createCourseKey({section, career: career.metadata.school})
           const courseKey = generateCourseKey(
-            section.year,
+            career.metadata.studyPlan,
             section.assignmentId,
             section.assignment,
             career.metadata.school
@@ -45,9 +46,9 @@ export const CurriculumService = {
               section.assignmentId,
               section.assignment,
               section.credits,
-              section.teacher,
+              Array.from(teachers),
               career.metadata.school,
-              section.year,
+              career.metadata.studyPlan,
               cycle.cycle
             ))
           }

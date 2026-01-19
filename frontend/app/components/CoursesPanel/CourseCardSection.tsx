@@ -2,8 +2,6 @@ import { CourseSection } from "@/app/models/CourseSection";
 import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
 import { useCourseCache } from "@/app/contexts/useCourseCache";
-import { Eye, EyeOff } from 'lucide-react'
-import { useState } from "react";
 
 
 /*
@@ -18,21 +16,14 @@ interface CourseCardCheckboxProps {
 }
 
 export default function CourseCardSection({ course, section, colorPair, checked, setAllChecked }: CourseCardCheckboxProps) {
-  const [visible, setVisible] = useState<boolean>(section.courseVisible)
-  const { addSections, removeSections, visibleSections } = useCourseCache()
+  // const [visible, setVisible] = useState<boolean>(course.getVisibility())
+  const { addSections, removeSections } = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
     // if is not checkt: not added -> add the course now
-    if (!checked) {
-      // update global trackers
-      addSections(section, course)
-      // update course
-      course.selectSection(section)
-    }
-    else {
-      removeSections(section, course)
-      course.unselectSection(section)
-    }
+    if (!checked) addSections(section, course)
+    else removeSections(section, course)
+
     // trigger the re-render of the course card
     setAllChecked(course.areAllSectionsSelected())
   }
@@ -67,20 +58,6 @@ export default function CourseCardSection({ course, section, colorPair, checked,
           ))}
         </div>
       </label>
-      Eye button to set its visibility on/off
-      <button onClick={() => {
-        setVisible(prev => {
-          if (prev) visibleSections.delete(section)
-          else visibleSections.add(section)
-          return !prev
-        })
-      }}>
-        {
-          visible
-          ? <Eye className="w-4 h-4 m-2" style={{ color: `${checked ? colorPair.background : colorPair.text}` }} />
-          : <EyeOff className="w-4 h-4 m-2" style={{ color: `${checked ? colorPair.background : colorPair.text}` }} />
-        }
-     </button>
     </div>
   )
 }

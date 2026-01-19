@@ -1,4 +1,4 @@
-import {Schedule} from "@/app/models/Schedule";
+import { Schedule } from "@/app/models/Schedule";
 
 export interface CourseSection {
   assignment: string;
@@ -7,7 +7,6 @@ export interface CourseSection {
   teacher: string;
   schedules: Schedule[];
   credits: number;
-  year: number;
   maxStudents: string;
   courseVisible: boolean;  // its parent course visibility
 }
