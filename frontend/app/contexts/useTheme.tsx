@@ -1,7 +1,6 @@
 "use client"
-import {createContext, ReactNode, useContext, useEffect, useState} from "react";
-import {StylesConfig} from "react-select";
-
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { StylesConfig } from "react-select";
 
 interface ThemeContextType {
   theme: 'light' | 'dark' | null;
@@ -11,13 +10,14 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-export function ThemeContextProvider({children} : {children: ReactNode}) {
+export function ThemeContextProvider({ children }: { children: ReactNode }) {
   // manage dark and light theme colors
-  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null)
+  const [styles, setStyles] = useState<StylesConfig | null>(null)
 
   // Initialize theme and setup system theme listener
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     // Initialize theme from localStorage or system preference
     const savedTheme = localStorage.getItem('theme')
     const initialTheme = savedTheme as ('light' | 'dark') || (mediaQuery.matches ? 'dark' : 'light')
@@ -46,50 +46,59 @@ export function ThemeContextProvider({children} : {children: ReactNode}) {
     localStorage.setItem('theme', theme)
   }, [theme])
 
-  // toggle theme, idk when am I going to use this
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
+  // Leer variables CSS después del render del cliente
+  useEffect(() => {
+    const readVar = (name: string) =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim() || "";
 
-  const readVar = (name: string) =>
-    getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-
-  const getReactSelectStyles = (): StylesConfig => {
-    const surface = `rgb(${readVar("--color-surface")})`;
-    const border = `rgb(${readVar("--color-border")})`;
-    const surfaceMuted = `rgb(${readVar("--color-surface-muted")})`;
-    const text = `rgb(${readVar("--color-foreground")})`;
-    const accent = `rgb(${readVar("--color-accent")})`;
-    const fontSize = readVar("--text-control") || "0.8125rem";
-
-    return {
+    const newStyles: StylesConfig = {
       control: (base, state) => ({
         ...base,
-        backgroundColor: surface,
-        border: `1px solid ${border}`,
-        boxShadow: state.isFocused ? `0 0 0 1px ${accent}` : "none",
-        color: text,
-        fontSize: fontSize,
+        backgroundColor: `rgb(${readVar("--color-surface")})`,
+        border: `1px solid rgb(${readVar("--color-border")})`,
+        boxShadow: state.isFocused ? `0 0 0 1px rgb(${readVar("--color-accent")})` : "none",
+        color: `rgb(${readVar("--color-foreground")})`,
+        fontSize: readVar("--text-control") || "0.8125rem",
       }),
       menu: (base) => ({
         ...base,
-        backgroundColor: surface,
+        backgroundColor: `rgb(${readVar("--color-surface")})`,
         zIndex: 9999,
       }),
       option: (base, state) => ({
         ...base,
-        backgroundColor: state.isFocused ? surfaceMuted : "transparent",
-        color: text,
+        backgroundColor: state.isFocused ? `rgb(${readVar("--color-surface-muted")})` : "transparent",
+        color: `rgb(${readVar("--color-foreground")})`,
         cursor: "pointer",
-        fontSize: fontSize,
+        fontSize: readVar("--text-control") || "0.8125rem",
       }),
-      singleValue: (base) => ({ ...base, color: text }),
-      input: (base) => ({ ...base, color: text }),
+      singleValue: (base) => ({ ...base, color: `rgb(${readVar("--color-foreground")})` }),
+      input: (base) => ({ ...base, color: `rgb(${readVar("--color-foreground")})` }),
       indicatorSeparator: () => ({ display: "none" }),
-      dropdownIndicator: (base) => ({ ...base, color: accent }),
+      dropdownIndicator: (base) => ({ ...base, color: `rgb(${readVar("--color-accent")})` }),
     };
-  };
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStyles(newStyles);
+
+    // Re-leer si cambia el tema
+    const observer = new MutationObserver(() => setStyles({ ...newStyles }));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
+
+    return () => observer.disconnect();
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
+
+  const getReactSelectStyles = (): StylesConfig => styles || {};
 
   return (
-    <ThemeContext.Provider value={{theme, toggleTheme, getReactSelectStyles}}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, getReactSelectStyles }}>
       {children}
     </ThemeContext.Provider>
   )

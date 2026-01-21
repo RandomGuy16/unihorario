@@ -18,14 +18,6 @@ function SearchFilter() {
   // Listen for theme changes
   const selectStyles = getReactSelectStyles()
 
-  /*
-  useEffect(() => {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      // Re-render or update styles
-      setSelectStyles(getReactSelectStyles())
-    })
-  }, []);
-  */
   return (
     <div className="flex flex-col justify-start items-start w-full">
       {/* separate Select element for each category in filterChooser */}
