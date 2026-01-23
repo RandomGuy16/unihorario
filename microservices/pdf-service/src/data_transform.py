@@ -54,7 +54,12 @@ def write_json(json_file: path.Path, career: UniversityCurriculum):
         json.dump(career.model_dump(), f, indent=4, ensure_ascii=False)
 
 
-def _parse_pdf_sync(pdf_file: path.Path):
+def _read_career(school: str):
+    with open(path.Path(CAREERS_DIR_PATH, f"{school}.json"), "r") as f:
+        return UniversityCurriculum.model_validate(json.load(f))
+
+
+def _parse_pdf_sync(pdf_file: path.Path | bytes):
     """This function means cpu intensive work"""
     out: UniversityCurriculum = UniversityCurriculum(years=[])
     with pdfplumber.open(pdf_file) as pdf:
@@ -112,8 +117,13 @@ def _parse_pdf_sync(pdf_file: path.Path):
 
             out.years[-1].careerCurriculums[-1].cycles.append(curr_cycle)
 
+        career_data_path = path.Path(CAREERS_DIR_PATH, f"{metadata.school}.json")
+        if career_data_path.exists():
+            prev_career_data = _read_career(metadata.school)
+            out.years.extend(prev_career_data.years)
+
         # debug here
-    write_json(path.Path(CAREERS_DIR_PATH, f"{metadata.school}.json"), out)
+    write_json(career_data_path, out)
     return out
 
 

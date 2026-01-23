@@ -1,5 +1,6 @@
+from fastapi import UploadFile
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 
 
 class CareerCurriculumMetadata(BaseModel):
@@ -122,5 +123,15 @@ class CareerCatalogData(BaseModel):
 
 
 class Catalog(BaseModel):
-    careers: List[CareerCatalogData]
+    careers: Dict[str, CareerCatalogData]
 
+
+# model to receive a curriculum in pdf file
+# class CreateCurriculumRequest(BaseModel):
+#     pdf: UploadFile
+
+
+class CreateCurriculumResponse(BaseModel):
+    success: bool
+    catalog: Catalog
+    universityCurriculum: UniversityCurriculum

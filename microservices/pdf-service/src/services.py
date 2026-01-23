@@ -1,24 +1,31 @@
 import asyncio
 import pathlib as path
 import json
-from typing import Dict, List, Any
+from typing import List, Any, BinaryIO
+
 from src.logger import logger
-from src.models import UniversityCurriculum, CareerCatalogData
-from src.data_transform import _parse_pdf_sync
+from src.models import UniversityCurriculum, CareerCatalogData, Catalog, CreateCurriculumResponse
+from src.data_transform import _parse_pdf_sync, _read_career
 from config import CAREERS_DIR_PATH, PDF_DIR_PATH
 
 
 class CatalogService:
-    data: Dict[str, CareerCatalogData]
+    data: Catalog
 
     def __init__(self):
-        self.data = {}
+        self.data = Catalog(careers={})
+        self.refresh_catalog()
+
+    def get_catalog(self):
+        return self.data
+
+    def refresh_catalog(self):
         logger.debug(CAREERS_DIR_PATH)
 
         # initialize catalog
         for file in CAREERS_DIR_PATH.glob("*.json"):
             career_data = CareerCatalogData(studyPlans=[], cycles=[], faculty="", career="")
-            
+
             with open(file, "r") as f:
                 data: UniversityCurriculum = UniversityCurriculum.model_validate(json.load(f))
                 for year in data.years:
@@ -31,18 +38,21 @@ class CatalogService:
 
             self.data[file.stem] = career_data
 
-    def get_catalog(self):
-        return {key: value.model_dump() for key, value in self.data.items()}
+
+    def has_career(self, career: str):
+        return career in self.data
 
 
 class CurriculumService:
-    def __init__(self):
-        pass
+
+    def __init__(self, catalog_service: CatalogService):
+        self.catalog_service = catalog_service
 
     async def get_curriculum(self, school):
-        pass
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _read_career, school)
 
-    async def parse_pdf(self, pdf_file: path.Path) -> UniversityCurriculum:
+    async def parse_pdf(self, pdf_file: path.Path | BinaryIO) -> UniversityCurriculum:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _parse_pdf_sync, pdf_file)
 
@@ -54,5 +64,15 @@ class CurriculumService:
         """Process all PDFs in a directory concurrently"""
         pdf_files = list(path.Path(directory).glob("*.pdf"))
         return await self.parse_multiple_pdfs(pdf_files)
+
+    async def receive_curriculum(self, pdf: BinaryIO):
+        curriculum = await self.parse_pdf(pdf)
+        self.catalog_service.refresh_catalog()
+
+        return CreateCurriculumResponse(
+            success=True,
+            catalog=self.catalog_service.get_catalog(),
+            universityCurriculum=curriculum
+        )
 
 
