@@ -1,9 +1,11 @@
 "use client"
 import Select from 'react-select'
-// import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useCourseCache } from "@/app/contexts/useCourseCache";
 import { useFilters } from "@/app/contexts/useFilters";
 import { useTheme } from "@/app/contexts/useTheme";
+import UploadCurriculumModal from "@/app/components/modals/UploadCurriculumModal";
+import UploadPDFButton from "@/app/components/CoursesPanel/SearchFilter/UploadPDFButton";
 
 
 interface selectFilterOption {
@@ -15,11 +17,13 @@ function SearchFilter() {
   const { selection, available: availableFilters, updateSelection } = useFilters()
   const { clearSections } = useCourseCache()
   const { getReactSelectStyles } = useTheme()
+  const [showUploadModal, setShowUploadModal] = useState(false)
+
   // Listen for theme changes
   const selectStyles = getReactSelectStyles()
 
   return (
-    <div className="flex flex-col justify-start items-start w-full">
+    <div className="flex flex-col justify-start items-start gap-1 w-full">
       {/* separate Select element for each category in filterChooser */}
 
       {/*
@@ -27,9 +31,11 @@ function SearchFilter() {
         reconfigures the courses available
       */}
       <div>
-        Carrera: <Select
+        Carrera:
+        <div className="flex flex-row justify-between items-center gap-2">
+          <Select
           instanceId={"career-select"}
-          className="text-label my-1 mt-0 shadow-elev-1"
+          className="text-label shadow-elev-1"
           styles={selectStyles} // Call the function
           options={
             availableFilters.careers.map(filterOption => ({
@@ -53,11 +59,14 @@ function SearchFilter() {
             clearSections()
           }}>
         </Select>
+          <UploadPDFButton setOpen={setShowUploadModal} />
+          <UploadCurriculumModal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} />
+        </div>
       </div>
       <div>
         Ciclo: <Select
           instanceId={"cycle-select"}
-          className="text-label my-1 shadow-elev-1"
+          className="text-label shadow-elev-1"
           styles={selectStyles}
           options={
             availableFilters.cycles.map(filterOption => ({
@@ -83,7 +92,7 @@ function SearchFilter() {
       <div>
         Plan de estudios: <Select
           instanceId={"plan-select"}
-          className="text-label my-1 mb-0 shadow-elev-1"
+          className="text-label shadow-elev-1"
           styles={selectStyles}
           options={
             availableFilters.years.map(filterOption => ({

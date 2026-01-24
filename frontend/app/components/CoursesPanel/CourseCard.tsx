@@ -133,7 +133,10 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
             </div>
             {/* </button> */}
             <button className="h-4"
-              onClick={() => handleCourseVisibility()}
+              onClick={() => {
+                // e.stopPropagation()
+                handleCourseVisibility()
+              }}
             >
               {isCourseVisible ? (
                 <Eye className="w-4 h-4" style={{ color: textColor }} />
