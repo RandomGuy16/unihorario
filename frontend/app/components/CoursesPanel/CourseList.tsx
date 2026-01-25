@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import Tabs from './Tabs/Tabs'
 import CourseCard from './CourseCard'
 import SearchFilter from './SearchFilter/SearchFilter'
@@ -44,20 +44,28 @@ function CourseList() {
 
   const coursesToRender = useMemo(() => {
     if (allCourses.size === 0) return []
-    console.log("CourseList::allCourses: ", allCourses)
+    // console.log("CourseList::allCourses: ", allCourses)
 
     return allCourses.values().filter((course) => {
-      const sameYear = course.getStudyPlan().toString() === selection.year
+      // console.log("CourseList::course.getStudyPlan(): ", course.getStudyPlan())
+      // console.log("CourseList::selection.year: ", selection.year)
+      const sameYear = course.getStudyPlan() === selection.year
+      //console.log("CourseList::course.getSchool(): ", course.getSchool())
+      //console.log("CourseList::selection.career: ", selection.career)
       const sameCareer = course.getSchool() === selection.career
+      //console.log("CourseList::course.getCycle(): ", course.getCycle())
+      //console.log("CourseList::selection.cycle: ", selection.cycle)
       const sameCycle = course.getCycle() === selection.cycle
+
+      //console.log("CourseList::sameYear, sameCareer, sameCycle: ", sameYear, sameCareer, sameCycle)
       return sameYear && sameCareer && sameCycle
     }).toArray()
   }, [allCourses, selection.career, selection.cycle, selection.year])
-
+  /*
   useEffect(() => {
-    renderCoursesSidebar(coursesToRender)
+    console.log("CourseList::coursesToRender: ", coursesToRender)
   }, [coursesToRender])
-
+  */
   return (
     <div className={`
       w-full h-full mx-auto p-4 rounded-r-lg flex flex-col justify-start items-stretch

@@ -1,6 +1,7 @@
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
 import { generateCourseKey } from "@/app/contexts/useCourseCache";
+import { SubmitCurriculumResponse } from "@/app/models/dto";
 
 
 export const CurriculumService = {
@@ -8,9 +9,12 @@ export const CurriculumService = {
    * This function loads the JSON data from the server and formats it.
    * @returns the formatted data
    */
-  async fetchCurriculum(): Promise<UniversityCurriculum> {
-    // const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
-    const response = await fetch('./UNMSM-FISI.json')
+  async fetchCurriculum(school: string): Promise<UniversityCurriculum> {
+    const params = new URLSearchParams()
+    params.append('school', school)
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+    const response = await fetch(`${baseUrl}/api/curriculum?${params}`)
+    // const response = await fetch('./UNMSM-FISI.json')
     // wait for the response
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -58,5 +62,23 @@ export const CurriculumService = {
     }
 
     return registry
+  },
+
+  async submitCurriculumFile(file: File): Promise<SubmitCurriculumResponse> {
+    // wrap the file in a FormData
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // send the file to the backend
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+    const response = await fetch(`${apiBaseUrl}/api/curriculum`, {
+      method: 'POST',
+      body: formData
+    })
+    // check the response
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
   }
 }

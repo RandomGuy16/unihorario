@@ -3,7 +3,7 @@ import { createContext, ReactNode, useContext, useMemo, useEffect, useState } fr
 import { useCredits } from "@/app/contexts/useCredits"
 import { Course } from "@/app/models/Course"
 import { CourseSection } from "@/app/models/CourseSection"
-import { useCurriculum } from "@/app/reducers/useCurriculum";
+import { useCurriculum } from "@/app/contexts/useCurriculum";
 
 
 export function generateCourseKey(year: string | number, id: string, name: string, career: string): string {

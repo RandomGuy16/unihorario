@@ -1,7 +1,8 @@
 "use client"
 import { createContext, ReactNode, useContext, useEffect, useState, useCallback } from "react"
 import { FilterOptions, SelectedFilters } from "@/app/models/SelectedFilters"
-import { useCatalog } from "@/app/reducers/useCatalog";
+import { useCurriculum } from "@/app/contexts/useCurriculum";
+import { useCatalog } from "@/app/contexts/useCatalog";
 import { Catalog } from "@/app/models/Catalog";
 
 const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: ""}
@@ -12,7 +13,8 @@ function computeAvailableOptions(data: Catalog): FilterOptions {
   const careers: string[] = []
   const years: string[] = []
   const cycles: string[] = []
-  for (const [career, careerData] of Object.entries(data)) {
+  console.log("computeAvailableOptions: ", data)
+  for (const [career, careerData] of Object.entries(data.careers)) {
     careers.push(career)
     years.push(...careerData.studyPlans)
     cycles.push(...careerData.cycles)
@@ -36,6 +38,7 @@ const FiltersContext = createContext<FiltersContextType | undefined>(undefined)
 export function FiltersContextProvider({children} : {children: ReactNode}) {
   const [selection, setSelection] = useState<SelectedFilters>(INITIAL_SELECTION)
   const [available, setAvailable] = useState<FilterOptions>(INITIAL_AVAILABLE)
+  const { fetchCurriculum } = useCurriculum()
   const { data } = useCatalog()
 
   const updateSelection =  useCallback(
@@ -65,6 +68,10 @@ export function FiltersContextProvider({children} : {children: ReactNode}) {
       });
     }
   }, [available]);
+
+  useEffect(() => {
+    if (selection.career) fetchCurriculum(selection.career)
+  }, [selection.career]);
 
   return (
     <>

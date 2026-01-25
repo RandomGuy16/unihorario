@@ -7,8 +7,9 @@ export const CatalogService = {
    * @returns the catalog
    */
   async fetchCatalog(): Promise<Catalog> {
-    // const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
-    const response = await fetch('./catalog.json')
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+    const response = await fetch(`${baseUrl}/api/catalog`)
+    // const response = await fetch('./catalog.json')
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }

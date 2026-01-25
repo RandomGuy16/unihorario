@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { Info, Upload } from 'lucide-react';
+import { useCatalog } from "@/app/contexts/useCatalog";
+import {useCurriculum} from "@/app/contexts/useCurriculum";
 
 interface UploadCurriculumModalProps {
 	isOpen: boolean;
@@ -7,6 +9,9 @@ interface UploadCurriculumModalProps {
 }
 function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) {
 	const [file, setFile] = useState<File | null>(null);
+	const { refreshCatalog } = useCatalog()
+	const { submitCurriculum, fetchCurriculum } = useCurriculum()
+
 
 	useEffect(() => {
 		const handleEscape = (e: KeyboardEvent) => {
@@ -18,23 +23,21 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 		}
 	}, [isOpen, onClose]);
 
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.item(0)
 		if (file) setFile(file)
 	}
 	const handleSubmit = async () => {
 		if (!file) return
-		// send file to the backend
-		const formData = new FormData()
-		formData.append('file', file)
+		// pass control to the curriculum service
+		const submitResponse = await submitCurriculum(file)
+		refreshCatalog()
+			.then(() => {
+				console.log("Catalog refreshed")
+				fetchCurriculum(submitResponse.metadata.school)
+			})
+			.catch((err) => console.error(err))
 
-		const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/curriculum`, {
-			method: 'POST',
-			body: formData
-		})
-
-		const data = await response.json()
-		console.log("UploadCurriculumModal::Response: ", data)
 		onClose()
 	}
 

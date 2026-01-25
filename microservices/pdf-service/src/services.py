@@ -5,7 +5,7 @@ from typing import List, Any, BinaryIO
 
 from src.logger import logger
 from src.models import UniversityCurriculum, CareerCatalogData, Catalog, CreateCurriculumResponse
-from src.data_transform import _parse_pdf_sync, _read_career
+from src.data_transform import _parse_pdf_sync, _read_career, get_file_metadata
 from config import CAREERS_DIR_PATH, PDF_DIR_PATH
 
 
@@ -36,11 +36,11 @@ class CatalogService:
                         for cycle in career.cycles:
                             career_data.cycles.append(cycle.cycle)
 
-            self.data[file.stem] = career_data
+            self.data.careers[file.stem] = career_data
 
 
     def has_career(self, career: str):
-        return career in self.data
+        return career in self.data.careers
 
 
 class CurriculumService:
@@ -51,6 +51,10 @@ class CurriculumService:
     async def get_curriculum(self, school):
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _read_career, school)
+
+    async def get_curriculum_metadata(self, pdf: BinaryIO):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, get_file_metadata, pdf)
 
     async def parse_pdf(self, pdf_file: path.Path | BinaryIO) -> UniversityCurriculum:
         loop = asyncio.get_event_loop()
@@ -66,13 +70,12 @@ class CurriculumService:
         return await self.parse_multiple_pdfs(pdf_files)
 
     async def receive_curriculum(self, pdf: BinaryIO):
-        curriculum = await self.parse_pdf(pdf)
+        metadata = await self.get_curriculum_metadata(pdf)
         self.catalog_service.refresh_catalog()
 
         return CreateCurriculumResponse(
             success=True,
-            catalog=self.catalog_service.get_catalog(),
-            universityCurriculum=curriculum
+            metadata=metadata
         )
 
 

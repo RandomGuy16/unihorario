@@ -1,5 +1,5 @@
 "use client"
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback, useEffect, useReducer, useContext, createContext, ReactNode } from 'react'
 import { CatalogService } from "@/app/services/CatalogService";
 import { Catalog } from "@/app/models/Catalog"
 
@@ -32,7 +32,7 @@ function catalogReducer(state: CatalogState, action: CatalogAction) {
   }
 }
 
-export function useCatalog() {
+function useCatalogLoader() {
   const [state, dispatch] = useReducer(catalogReducer, {
     data: null,
     loading: false,
@@ -43,6 +43,7 @@ export function useCatalog() {
     dispatch({type: "FETCH_START"})
     try {
       const data = await CatalogService.fetchCatalog()
+      console.log("UseCatalogLoader::fetch: ", data)
       dispatch({ type: "FETCH_SUCCESS", payload: data})
     } catch (err) {
       dispatch({ type: "FETCH_ERROR", payload: (err as Error).message })
@@ -54,5 +55,27 @@ export function useCatalog() {
     loadData().then()
   }, [loadData]);
 
-  return { ...state, refresh: loadData }
+  return { ...state, refreshCatalog: loadData }
+}
+
+interface CatalogContextType extends CatalogState {
+  refreshCatalog: () => Promise<void>;
+}
+const CatalogContext = createContext<CatalogContextType | undefined>(undefined)
+
+export function CatalogContextProvider({ children }: { children: ReactNode }) {
+  const catalogState = useCatalogLoader()
+  return (
+    <CatalogContext.Provider value={catalogState}>
+      {children}
+    </CatalogContext.Provider>
+  )
+}
+
+export function useCatalog() {
+  const context = useContext(CatalogContext)
+  if (context === undefined) {
+    throw new Error('useCatalogContext must be used within a CatalogProvider')
+  }
+  return context
 }

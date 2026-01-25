@@ -1,8 +1,9 @@
 "use client"
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback, useReducer, useContext, createContext, ReactNode } from 'react'
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
 import { CurriculumService } from "@/app/services/CurriculumService";
+import {SubmitCurriculumResponse} from "@/app/models/dto";
 
 // Define the shape of our state
 interface CurriculumState {
@@ -38,7 +39,7 @@ function curriculumReducer(state: CurriculumState, action: CurriculumAction) {
   }
 }
 
-export function useCurriculum() {
+export function useCurriculumLoader() {
   const [state, dispatch] = useReducer(curriculumReducer, {
     data: null,
     courseRegistry: null,
@@ -46,10 +47,10 @@ export function useCurriculum() {
     error: null,
   })
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (school: string) => {
     dispatch({type: "FETCH_START"})
     try {
-      const data = await CurriculumService.fetchCurriculum()
+      const data = await CurriculumService.fetchCurriculum(school)
       dispatch({ type: "FETCH_SUCCESS", payload: data })
     } catch (err) {
       dispatch({ type: "FETCH_ERROR", payload: (err as Error).message })
@@ -57,9 +58,36 @@ export function useCurriculum() {
   }, [])
 
   // trigger fetch on mount
+  /*
   useEffect(() => {
     loadData().then()
   }, [loadData]);
+  */
+  return { ...state, fetchCurriculum: loadData }
+}
 
-  return { ...state, refresh: loadData }
+interface CurriculumContextType extends CurriculumState {
+  fetchCurriculum: (school: string) => void;
+  submitCurriculum: (file: File) => Promise<SubmitCurriculumResponse>;
+}
+const CurriculumContext = createContext<CurriculumContextType | undefined>(undefined)
+
+export function CurriculumContextProvider({ children }: { children: ReactNode }) {
+  const curriculumState = useCurriculumLoader()
+  return (
+    <CurriculumContext.Provider value={{
+      ...curriculumState,
+      submitCurriculum: CurriculumService.submitCurriculumFile
+    }}>
+      {children}
+    </CurriculumContext.Provider>
+  )
+}
+
+export function useCurriculum() {
+  const context = useContext(CurriculumContext)
+  if (context === undefined) {
+    throw new Error('useCurriculumContext must be used within a CurriculumProvider')
+  }
+  return context
 }

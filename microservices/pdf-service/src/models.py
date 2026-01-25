@@ -133,5 +133,4 @@ class Catalog(BaseModel):
 
 class CreateCurriculumResponse(BaseModel):
     success: bool
-    catalog: Catalog
-    universityCurriculum: UniversityCurriculum
+    metadata: CareerCurriculumMetadata

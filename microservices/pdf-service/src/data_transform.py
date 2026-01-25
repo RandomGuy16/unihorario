@@ -5,7 +5,23 @@ import os
 from config import PDF_DIR_PATH, CAREERS_DIR_PATH
 from src.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
     UniversityCurriculum
-from typing import List
+from typing import BinaryIO, List
+
+
+def get_file_metadata(file: BinaryIO):
+    with pdfplumber.open(file) as pdf:
+        first_page = pdf.pages[0]
+        meta_lines = first_page.extract_text().split("\n")[3:9]
+        meta_lines = list(map(lambda line: line.split(":")[1].strip(), meta_lines))
+
+        return CareerCurriculumMetadata(
+            faculty=meta_lines[0],
+            school=meta_lines[1],
+            specialization=meta_lines[2],
+            studyPlan=meta_lines[3],
+            academicPeriod=meta_lines[4],
+            datePrinted=meta_lines[5]
+        )
 
 
 def extract_metadata(pdf_file: pdfplumber.PDF):

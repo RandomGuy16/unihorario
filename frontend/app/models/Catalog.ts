@@ -7,4 +7,6 @@ export interface CareerCatalogData {
   career: string;
 }
 
-export type Catalog = Record<string, CareerCatalogData>
+export interface Catalog {
+  careers: Record<string, CareerCatalogData>
+}

@@ -5,6 +5,8 @@ import { ResponsiveContextProvider } from "@/app/contexts/useResponsive";
 import { SidebarContextProvider } from "@/app/contexts/useSidebar";
 import { CreditsContextProvider } from "@/app/contexts/useCredits";
 import { ThemeContextProvider } from "@/app/contexts/useTheme";
+import { CurriculumContextProvider } from "@/app/contexts/useCurriculum";
+import { CatalogContextProvider } from "@/app/contexts/useCatalog";
 import "./globals.css";
 import { ReactNode } from "react";
 
@@ -34,7 +36,11 @@ export default function RootLayout({ children, }: Readonly<{ children: ReactNode
           <SidebarContextProvider>
             <CreditsContextProvider>
               <Header/>
-              {children}
+              <CatalogContextProvider>
+                <CurriculumContextProvider>
+                  {children}
+                </CurriculumContextProvider>
+              </CatalogContextProvider>
             </CreditsContextProvider>
           </SidebarContextProvider>
         </ResponsiveContextProvider>

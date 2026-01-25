@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.services import CatalogService, CurriculumService
@@ -30,9 +30,14 @@ async def get_catalog():
 
 @app.get("/api/curriculum")
 async def get_career_curriculum(school: str=''):
-    return await curriculum_service.get_curriculum(school=school)
+    try:
+        return await curriculum_service.get_curriculum(school=school)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"File not found: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/curriculum")
 async def post_career_curriculum(file: UploadFile = File(...)):
     logger.info(f"Received pdf upload")
-    return await curriculum_service.receive_curriculum(file)
+    return await curriculum_service.receive_curriculum(file.file)
