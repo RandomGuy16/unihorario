@@ -217,4 +217,6 @@ __marimo__/
 
 # specific project files
 pdf/
+*.pdf
 *.json
+*.zip

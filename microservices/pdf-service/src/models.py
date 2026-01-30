@@ -1,6 +1,6 @@
 from fastapi import UploadFile
-from pydantic import BaseModel
-from typing import List, Dict
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any
 
 
 class CareerCurriculumMetadata(BaseModel):
@@ -84,15 +84,15 @@ class CourseSection(BaseModel):
     :ivar courseVisible: Determines if the course section is visible to others.
     :type courseVisible: bool
     """
-    assignment: str
-    assignmentId: str
-    sectionNumber: int
-    teacher: str
-    schedules: List[Schedule]
-    credits: int
-    studyPlan: str = ''
-    maxStudents: int
-    courseVisible: bool = True
+    assignment   : str            = ''
+    assignmentId : str            = ''
+    sectionNumber: int            = 1
+    teacher      : str            = ''
+    schedules    : List[Schedule] = Field(default_factory=list)
+    credits      : int            = 1
+    studyPlan    : str            = ''
+    maxStudents  : int            = 1
+    courseVisible: bool           = True
 
 
 class Cycle(BaseModel):
@@ -115,7 +115,7 @@ class UniversityCurriculum(BaseModel):
 
 
 # here goes the catalog
-class CareerCatalogData(BaseModel):
+class CatalogCareerData(BaseModel):
     studyPlans: List[str]
     cycles: List[str]
     faculty: str
@@ -123,14 +123,18 @@ class CareerCatalogData(BaseModel):
 
 
 class Catalog(BaseModel):
-    careers: Dict[str, CareerCatalogData]
+    careers: Dict[str, CatalogCareerData]
 
 
-# model to receive a curriculum in pdf file
-# class CreateCurriculumRequest(BaseModel):
-#     pdf: UploadFile
+# Here come models about responses and requests to the endpoints
 
 
 class CreateCurriculumResponse(BaseModel):
     success: bool
     metadata: CareerCurriculumMetadata
+    curriculumCreationJobId: str
+
+class AwaitTreeResponse(BaseModel):
+    success: bool
+    jobIds: list[str]  = Field(default_factory=list)
+    results: list[Any] = Field(default_factory=list)
