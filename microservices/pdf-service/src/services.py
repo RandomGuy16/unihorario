@@ -406,7 +406,7 @@ class CurriculumService:
         if not parse_job_id:
             raise RuntimeError("Failed to submit parse job")
         # when parsing finishes, refresh the catalog as a job immediately executed after the parsing job
-        self.jobs.then(
+        catalog_refresh_job_id = self.jobs.then(
             parse_job_id,
             "curriculum.catalog.refresh_catalog",
             lambda: self.catalog_service.refresh_catalog()
@@ -415,5 +415,6 @@ class CurriculumService:
         return CreateCurriculumResponse(
             success=True,
             metadata=metadata,
-            curriculumCreationJobId=parse_job_id
+            curriculumCreationJobId=parse_job_id,
+            catalogRefreshJobId=catalog_refresh_job_id
         )

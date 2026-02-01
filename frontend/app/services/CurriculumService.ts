@@ -14,7 +14,6 @@ export const CurriculumService = {
     params.append('school', school)
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
     const response = await fetch(`${baseUrl}/api/curriculum?${params}`)
-    // const response = await fetch('./UNMSM-FISI.json')
     // wait for the response
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -76,6 +75,18 @@ export const CurriculumService = {
       body: formData
     })
     // check the response
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
+  },
+
+  async awaitCurriculumParsing(curriculumCreationJobId: string): Promise<UniversityCurriculum> {
+    const params = new URLSearchParams()
+    params.append('jobId', curriculumCreationJobId)
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+    const response = await fetch(`${baseUrl}/api/jobs/await_job/${params}`)
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }

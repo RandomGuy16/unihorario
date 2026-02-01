@@ -1,7 +1,8 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { Info, Upload } from 'lucide-react';
 import { useCatalog } from "@/app/contexts/useCatalog";
-import {useCurriculum} from "@/app/contexts/useCurriculum";
+import { useCurriculum } from "@/app/contexts/useCurriculum";
+import { SubmitCurriculumResponse } from "@/app/models/dto";
 
 interface UploadCurriculumModalProps {
 	isOpen: boolean;
@@ -9,8 +10,8 @@ interface UploadCurriculumModalProps {
 }
 function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) {
 	const [file, setFile] = useState<File | null>(null);
-	const { refreshCatalog } = useCatalog()
-	const { submitCurriculum, fetchCurriculum } = useCurriculum()
+	const catalogProvider = useCatalog()
+	const curriculumProvider = useCurriculum()
 
 
 	useEffect(() => {
@@ -30,13 +31,10 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 	const handleSubmit = async () => {
 		if (!file) return
 		// pass control to the curriculum service
-		const submitResponse = await submitCurriculum(file)
-		refreshCatalog()
-			.then(() => {
-				console.log("Catalog refreshed")
-				fetchCurriculum(submitResponse.metadata.school)
-			})
-			.catch((err) => console.error(err))
+		const submitResponse: SubmitCurriculumResponse = await curriculumProvider.submitCurriculum(file)
+		// await the creation of the new curriculum to refresh the courses
+		await curriculumProvider.awaitCurriculumParsing(submitResponse.curriculumCreationJobId)
+		await catalogProvider.awaitCatalogRefresh(submitResponse.catalogRefreshJobId)
 
 		onClose()
 	}

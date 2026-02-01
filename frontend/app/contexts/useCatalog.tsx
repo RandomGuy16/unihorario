@@ -39,27 +39,39 @@ function useCatalogLoader() {
     error: null
   })
 
-  const loadData = useCallback(async () => {
+  const _handleFetch = useCallback(async (fetchFn: () => Promise<Catalog>,) => {
+    // set the state on fetch start
     dispatch({type: "FETCH_START"})
     try {
-      const data = await CatalogService.fetchCatalog()
-      console.log("UseCatalogLoader::fetch: ", data)
+      // execute the callback and set the state on fetch success
+      const data = await fetchFn()
       dispatch({ type: "FETCH_SUCCESS", payload: data})
     } catch (err) {
+      // set the state on fetch error
       dispatch({ type: "FETCH_ERROR", payload: (err as Error).message })
     }
   }, [])
+
+  const loadData = useCallback(async () => {
+    await _handleFetch(() => CatalogService.fetchCatalog())
+      // console.log("UseCatalogLoader::fetch: ", data)
+  }, [_handleFetch])
+
+  const awaitDataRefresh = useCallback(async (catalogRefreshJobId: string) => {
+    await _handleFetch(() => CatalogService.awaitCatalogRefresh(catalogRefreshJobId))
+  }, [_handleFetch])
 
   // trigger fetch on mount
   useEffect(() => {
     loadData().then()
   }, [loadData]);
 
-  return { ...state, refreshCatalog: loadData }
+  return { ...state, refreshCatalog: loadData, awaitCatalogRefresh: awaitDataRefresh }
 }
 
 interface CatalogContextType extends CatalogState {
-  refreshCatalog: () => Promise<void>;
+  refreshCatalog     : () => Promise<void>;
+  awaitCatalogRefresh: (catalogRefreshJobId: string) => Promise<void>;
 }
 const CatalogContext = createContext<CatalogContextType | undefined>(undefined)
 

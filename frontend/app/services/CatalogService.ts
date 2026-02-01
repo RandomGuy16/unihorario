@@ -15,6 +15,14 @@ export const CatalogService = {
     }
     return await response.json()
   },
+  async awaitCatalogRefresh(catalogRefreshJobId: string): Promise<Catalog> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+    const response = await fetch(`${baseUrl}/api/jobs/await_job/${catalogRefreshJobId}`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
+  }
 
   // formatFilters(catalog: Catalog) {
   //   return

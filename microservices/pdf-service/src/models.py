@@ -130,11 +130,12 @@ class Catalog(BaseModel):
 
 
 class CreateCurriculumResponse(BaseModel):
-    success: bool
-    metadata: CareerCurriculumMetadata
+    success                : bool
+    metadata               : CareerCurriculumMetadata
     curriculumCreationJobId: str
+    catalogRefreshJobId    : str
 
 class AwaitTreeResponse(BaseModel):
     success: bool
-    jobIds: list[str]  = Field(default_factory=list)
+    jobIds : list[str]  = Field(default_factory=list)
     results: list[Any] = Field(default_factory=list)

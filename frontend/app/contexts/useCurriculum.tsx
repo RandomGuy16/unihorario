@@ -47,15 +47,23 @@ export function useCurriculumLoader() {
     error: null,
   })
 
-  const loadData = useCallback(async (school: string) => {
+  const _handleFetch = useCallback(async (fetchFn: () => Promise<UniversityCurriculum>,) => {
     dispatch({type: "FETCH_START"})
     try {
-      const data = await CurriculumService.fetchCurriculum(school)
+      const data = await fetchFn()
       dispatch({ type: "FETCH_SUCCESS", payload: data })
     } catch (err) {
       dispatch({ type: "FETCH_ERROR", payload: (err as Error).message })
     }
   }, [])
+
+  const loadData = useCallback(async (school: string) => {
+    await _handleFetch(() => CurriculumService.fetchCurriculum(school))
+  }, [_handleFetch])
+
+  const awaitDataParsing = useCallback(async (curriculumCreationJobId: string) => {
+    await _handleFetch(() => CurriculumService.awaitCurriculumParsing(curriculumCreationJobId))
+  }, [_handleFetch])
 
   // trigger fetch on mount
   /*
@@ -63,11 +71,16 @@ export function useCurriculumLoader() {
     loadData().then()
   }, [loadData]);
   */
-  return { ...state, fetchCurriculum: loadData }
+  return {
+    ...state,
+    fetchCurriculum: loadData,
+    submitCurriculum: CurriculumService.submitCurriculumFile,
+    awaitCurriculumParsing: awaitDataParsing }
 }
 
 interface CurriculumContextType extends CurriculumState {
   fetchCurriculum: (school: string) => void;
+  awaitCurriculumParsing: (curriculumCreationJobId: string) => Promise<void>;
   submitCurriculum: (file: File) => Promise<SubmitCurriculumResponse>;
 }
 const CurriculumContext = createContext<CurriculumContextType | undefined>(undefined)
@@ -75,10 +88,7 @@ const CurriculumContext = createContext<CurriculumContextType | undefined>(undef
 export function CurriculumContextProvider({ children }: { children: ReactNode }) {
   const curriculumState = useCurriculumLoader()
   return (
-    <CurriculumContext.Provider value={{
-      ...curriculumState,
-      submitCurriculum: CurriculumService.submitCurriculumFile
-    }}>
+    <CurriculumContext.Provider value={curriculumState}>
       {children}
     </CurriculumContext.Provider>
   )
