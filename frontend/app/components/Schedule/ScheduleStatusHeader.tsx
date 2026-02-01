@@ -3,8 +3,8 @@ import { Sheet, Image } from 'lucide-react'
 import ExcelJS, { Worksheet } from 'exceljs'
 import {Schedule} from "@/app/models/Schedule";
 import {capitalize} from "@/app/utils/misc";
-import {useCourseCache} from "@/app/contexts/useCourseCache";
-import {useCredits} from "@/app/contexts/useCredits";
+import {useCourseCache} from "@/app/providers/useCourseCache";
+import {useCredits} from "@/app/providers/useCredits";
 
 
 // Represents a time slot with start and end times

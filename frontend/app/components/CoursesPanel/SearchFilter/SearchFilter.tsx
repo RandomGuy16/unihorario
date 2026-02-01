@@ -1,9 +1,9 @@
 "use client"
 import Select from 'react-select'
 import { useState } from 'react'
-import { useCourseCache } from "@/app/contexts/useCourseCache";
-import { useFilters } from "@/app/contexts/useFilters";
-import { useTheme } from "@/app/contexts/useTheme";
+import { useCourseCache } from "@/app/providers/useCourseCache";
+import { useFilters } from "@/app/providers/useFilters";
+import { useTheme } from "@/app/providers/useTheme";
 import UploadCurriculumModal from "@/app/components/modals/UploadCurriculumModal";
 import UploadPDFButton from "@/app/components/CoursesPanel/SearchFilter/UploadPDFButton";
 

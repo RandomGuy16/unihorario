@@ -1,9 +1,9 @@
 "use client"
 import { createContext, ReactNode, useContext, useMemo, useEffect, useState } from "react"
-import { useCredits } from "@/app/contexts/useCredits"
+import { useCredits } from "@/app/providers/useCredits"
 import { Course } from "@/app/models/Course"
 import { CourseSection } from "@/app/models/CourseSection"
-import { useCurriculum } from "@/app/contexts/useCurriculum";
+import { useCurriculum } from "@/app/providers/useCurriculum";
 
 
 export function generateCourseKey(year: string | number, id: string, name: string, career: string): string {

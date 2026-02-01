@@ -4,12 +4,12 @@ import CourseCard from './CourseCard'
 import SearchFilter from './SearchFilter/SearchFilter'
 import { Course } from "@/app/models/Course";
 import { getCourseColor } from "@/app/utils/CourseCard";
-import { useResponsive } from "@/app/contexts/useResponsive";
-import { useSidebar } from "@/app/contexts/useSidebar";
-import { useCourseCache } from "@/app/contexts/useCourseCache";
-import { useFilters } from "@/app/contexts/useFilters";
+import { useResponsive } from "@/app/providers/useResponsive";
+import { useSidebar } from "@/app/providers/useSidebar";
+import { useCourseCache } from "@/app/providers/useCourseCache";
+import { useFilters } from "@/app/providers/useFilters";
 // import { useCurriculum } from "@/app/reducers/useCurriculum";
-// import { generateCourseKey } from "@/app/contexts/useCourseCache";
+// import { generateCourseKey } from "@/app/providers/useCourseCache";
 
 
 function renderCoursesSidebar(courses: Course[]) {

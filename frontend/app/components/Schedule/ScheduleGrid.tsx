@@ -3,7 +3,7 @@ import ScheduleStatusHeader from "./ScheduleStatusHeader";
 import { ReactElement, useMemo } from 'react'
 import { Schedule } from "@/app/models/Schedule";
 import { calculateECPosition } from "@/app/utils/EventCard";
-import { useCourseCache } from "@/app/contexts/useCourseCache";
+import { useCourseCache } from "@/app/providers/useCourseCache";
 
 
 const MONDAY_ID = "monday"

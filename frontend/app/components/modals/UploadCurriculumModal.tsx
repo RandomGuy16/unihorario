@@ -1,7 +1,7 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { Info, Upload } from 'lucide-react';
-import { useCatalog } from "@/app/contexts/useCatalog";
-import { useCurriculum } from "@/app/contexts/useCurriculum";
+import { useCatalog } from "@/app/providers/useCatalog";
+import { useCurriculum } from "@/app/providers/useCurriculum";
 import { SubmitCurriculumResponse } from "@/app/models/dto";
 
 interface UploadCurriculumModalProps {

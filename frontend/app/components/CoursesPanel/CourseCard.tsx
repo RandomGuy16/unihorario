@@ -4,8 +4,8 @@ import CourseCardSection from '@/app/components/CoursesPanel/CourseCardSection';
 import { CourseSection } from "@/app/models/CourseSection";
 import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
-import { useTheme } from "@/app/contexts/useTheme";
-import { useCourseCache } from "@/app/contexts/useCourseCache";
+import { useTheme } from "@/app/providers/useTheme";
+import { useCourseCache } from "@/app/providers/useCourseCache";
 
 
 interface CourseCardCheckboxAllProps {

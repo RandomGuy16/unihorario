@@ -1,7 +1,7 @@
 "use client"
 import { Calendar } from "lucide-react"
-import { useResponsive } from "@/app/contexts/useResponsive";
-import { useSidebar } from "@/app/contexts/useSidebar"
+import { useResponsive } from "@/app/providers/useResponsive";
+import { useSidebar } from "@/app/providers/useSidebar"
 
 
 function Header() {

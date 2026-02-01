@@ -1,6 +1,6 @@
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
-import { generateCourseKey } from "@/app/contexts/useCourseCache";
+import { generateCourseKey } from "@/app/providers/useCourseCache";
 import { SubmitCurriculumResponse } from "@/app/models/dto";
 
 

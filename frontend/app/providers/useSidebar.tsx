@@ -1,6 +1,6 @@
 "use client"
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
-import { useResponsive } from "@/app/contexts/useResponsive";
+import { useResponsive } from "@/app/providers/useResponsive";
 
 
 interface SidebarContextType {

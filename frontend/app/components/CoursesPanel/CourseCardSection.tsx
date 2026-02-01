@@ -1,7 +1,7 @@
 import { CourseSection } from "@/app/models/CourseSection";
 import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
-import { useCourseCache } from "@/app/contexts/useCourseCache";
+import { useCourseCache } from "@/app/providers/useCourseCache";
 
 
 /*

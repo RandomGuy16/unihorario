@@ -1,8 +1,8 @@
 "use client"
 import { createContext, ReactNode, useContext, useEffect, useState, useCallback } from "react"
 import { FilterOptions, SelectedFilters } from "@/app/models/SelectedFilters"
-import { useCurriculum } from "@/app/contexts/useCurriculum";
-import { useCatalog } from "@/app/contexts/useCatalog";
+import { useCurriculum } from "@/app/providers/useCurriculum";
+import { useCatalog } from "@/app/providers/useCatalog";
 import { Catalog } from "@/app/models/Catalog";
 
 const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: ""}

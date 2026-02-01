@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Header from "./components/Header"
-import { ResponsiveContextProvider } from "@/app/contexts/useResponsive";
-import { SidebarContextProvider } from "@/app/contexts/useSidebar";
-import { CreditsContextProvider } from "@/app/contexts/useCredits";
-import { ThemeContextProvider } from "@/app/contexts/useTheme";
-import { CurriculumContextProvider } from "@/app/contexts/useCurriculum";
-import { CatalogContextProvider } from "@/app/contexts/useCatalog";
+import { ResponsiveContextProvider } from "@/app/providers/useResponsive";
+import { SidebarContextProvider } from "@/app/providers/useSidebar";
+import { CreditsContextProvider } from "@/app/providers/useCredits";
+import { ThemeContextProvider } from "@/app/providers/useTheme";
+import { CurriculumContextProvider } from "@/app/providers/useCurriculum";
+import { CatalogContextProvider } from "@/app/providers/useCatalog";
 import "./globals.css";
 import { ReactNode } from "react";
 

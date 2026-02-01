@@ -1,8 +1,8 @@
 "use client"
 import CourseList from "@/app/components/CoursesPanel/CourseList";
 import ScheduleGrid from "@/app/components/Schedule/ScheduleGrid";
-import { CourseCacheContextProvider } from "@/app/contexts/useCourseCache";
-import { FiltersContextProvider } from "@/app/contexts/useFilters";
+import { CourseCacheContextProvider } from "@/app/providers/useCourseCache";
+import { FiltersContextProvider } from "@/app/providers/useFilters";
 
 export default function Home() {
 
@@ -21,6 +21,7 @@ export default function Home() {
         <main className="area-main row-span-1 w-full h-full flex flex-row justify-center">
           <ScheduleGrid/>
         </main>
+
       </CourseCacheContextProvider>
     </div>
   )
