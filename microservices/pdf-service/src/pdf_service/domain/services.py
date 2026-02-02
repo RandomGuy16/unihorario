@@ -5,10 +5,10 @@ import pathlib as path
 from enum import Enum
 from typing import Dict, BinaryIO, Optional, Any, Callable, Coroutine, Tuple
 from pydantic.v1 import BaseModel, Field
-from src.logger import logger
-from src.models import UniversityCurriculum, Catalog, CreateCurriculumResponse
-from src.data_transform import parse_pdf_sync, read_career, get_file_metadata, create_catalog
-from config import CAREERS_DIR_PATH
+from pdf_service.core.logger import logger
+from pdf_service.domain.models import UniversityCurriculum, Catalog, CreateCurriculumResponse
+from pdf_service.domain.data_transform import parse_pdf_sync, read_career, get_file_metadata, create_catalog
+from pdf_service.core.config import CAREERS_DIR_PATH
 import uuid
 
 
@@ -38,7 +38,7 @@ class JobInfoTree(BaseModel):
     children: list["JobInfoTree"] = Field(default_factory=list)
 
 
-async def _runner(info: JobInfo, coro: "asyncio.coroutines.Coroutine[Any, Any, Any]") -> None:
+async def _runner(info: JobInfo, coro: Coroutine[Any, Any, Any]) -> None:
     """
     Executes a coroutine and updates the JobInfo status and timestamps.
 
@@ -77,7 +77,7 @@ class JobManager:
         if job_id in self._job_events:
             self._job_events[job_id].set()
 
-    def _start_reserved(self, job_id: str, coro: "asyncio.coroutines.Coroutine[Any, Any, Any]") -> str:
+    def _start_reserved(self, job_id: str, coro: Coroutine[Any, Any, Any]) -> str:
         """
         Starts a coroutine for a job_id that already exists in self._jobs.
 
@@ -96,7 +96,7 @@ class JobManager:
         self._on_job_added(job_id)
         return job_id
 
-    def submit(self, kind: str, coro: "asyncio.coroutines.Coroutine[Any, Any, Any]") -> str:
+    def submit(self, kind: str, coro: Coroutine[Any, Any, Any]) -> str:
         """
         Submits a coroutine as a new job to be executed and tracks its status and result. Each submitted
         job is assigned a unique identifier and its lifecycle is managed until completion.
@@ -124,7 +124,7 @@ class JobManager:
         logger.info(f"Job ({kind}) submitted successfully, running in thread now.")
         return job_id
 
-    def submit_child(self, parent_job_id: str, kind: str, coro: "asyncio.coroutines.Coroutine[Any, Any, Any]") -> str:
+    def submit_child(self, parent_job_id: str, kind: str, coro: Coroutine[Any, Any, Any]) -> str:
         """
         Submits a child task associated with a parent job ID. The child task is linked
         to the parent job after submission.

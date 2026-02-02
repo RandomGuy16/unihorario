@@ -1,12 +1,11 @@
 import json
 import pathlib as path
 from pathlib import Path
-
 import pdfplumber
 import os
-from config import PDF_DIR_PATH, CAREERS_DIR_PATH, CATALOG_DIR_PATH
-from src.logger import logger
-from src.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
+from pdf_service.core.config import PDF_DIR_PATH, CAREERS_DIR_PATH, CATALOG_DIR_PATH
+from pdf_service.core.logger import logger
+from pdf_service.domain.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
     UniversityCurriculum, CatalogCareerData, Catalog
 from typing import BinaryIO, List
 

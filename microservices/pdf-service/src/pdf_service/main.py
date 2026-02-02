@@ -1,10 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
-from src.models import AwaitJobResponse, AwaitTreeResponse
-from src.services import CatalogService, CurriculumService, JobManager
-from src.logger import logger
+from pdf_service.domain.models import AwaitJobResponse, AwaitTreeResponse
+from pdf_service.domain.services import CatalogService, CurriculumService, JobManager
+from pdf_service.core.logger import logger
 
 job_manager        = JobManager()
 catalog_service    = CatalogService(jobs=job_manager)

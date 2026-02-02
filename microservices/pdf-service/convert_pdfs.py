@@ -1,4 +1,4 @@
-from src.data_transform import main, _write_catalog
+from src.pdf_service.domain.data_transform import main, _write_catalog
 
 main()
 
