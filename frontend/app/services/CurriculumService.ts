@@ -1,7 +1,7 @@
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
 import { generateCourseKey } from "@/app/providers/useCourseCache";
-import { SubmitCurriculumResponse } from "@/app/models/dto";
+import { AwaitJobResponse, SubmitCurriculumResponse } from "@/app/models/dto";
 
 
 export const CurriculumService = {
@@ -82,14 +82,16 @@ export const CurriculumService = {
   },
 
   async awaitCurriculumParsing(curriculumCreationJobId: string): Promise<UniversityCurriculum> {
-    const params = new URLSearchParams()
-    params.append('jobId', curriculumCreationJobId)
+    // const params = new URLSearchParams()
+    // params.append('jobId', curriculumCreationJobId)
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
-    const response = await fetch(`${baseUrl}/api/jobs/await_job/${params}`)
+    const response = await fetch(`${baseUrl}/api/jobs/await_job/${curriculumCreationJobId}`)
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    return await response.json()
+    const data: AwaitJobResponse<UniversityCurriculum> = await response.json()
+    if (!data.success) throw new Error('University curriculum parsing job failed')
+    return data.result
   }
 }

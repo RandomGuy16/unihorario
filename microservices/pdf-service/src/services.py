@@ -68,8 +68,14 @@ class JobManager:
         """
         Initializes the JobManager with empty job and task registries.
         """
-        self._jobs : Dict[str, JobInfo]      = {}
-        self._tasks: Dict[str, asyncio.Task] = {}
+        self._jobs      : Dict[str, JobInfo]       = {}
+        self._tasks     : Dict[str, asyncio.Task]  = {}
+        self._job_events: Dict[str, asyncio.Event] = {}
+
+    def _on_job_added(self, job_id: str):
+        """some docstring"""
+        if job_id in self._job_events:
+            self._job_events[job_id].set()
 
     def _start_reserved(self, job_id: str, coro: "asyncio.coroutines.Coroutine[Any, Any, Any]") -> str:
         """
@@ -86,6 +92,8 @@ class JobManager:
         # start the task
         task = asyncio.create_task(_runner(info, coro))
         self._tasks[job_id] = task
+        # never forget to set the job_event
+        self._on_job_added(job_id)
         return job_id
 
     def submit(self, kind: str, coro: "asyncio.coroutines.Coroutine[Any, Any, Any]") -> str:
@@ -98,13 +106,21 @@ class JobManager:
         :return: A string containing the unique identifier for the submitted job.
         """
         # create id and info for the new job
-        job_id              = uuid.uuid4().hex
-        info                = JobInfo(job_id=job_id, kind=kind, status=JobStatus.QUEUED)
-        self._jobs[job_id]  = info  # store it
+        job_id             = uuid.uuid4().hex
+        info               = JobInfo(job_id=job_id, kind=kind, status=JobStatus.QUEUED)
+        self._jobs[job_id] = info  # store it
+        # submit a job event
+        # since the submitting logic is inside a lot of helpers
+        # this job event is needed
+        self._job_events[job_id] = asyncio.Event()
+        logger.debug(job_id)
+        logger.info(self._job_events[job_id])
 
         # start the task
         task                = asyncio.create_task(_runner(info, coro))
         self._tasks[job_id] = task
+        self._on_job_added(job_id)
+        logger.info(self._job_events[job_id])
         logger.info(f"Job ({kind}) submitted successfully, running in thread now.")
         return job_id
 
@@ -153,6 +169,7 @@ class JobManager:
         # generate job information for the future task and link immediately
         child_job_id = uuid.uuid4().hex
         self._jobs[child_job_id] = JobInfo(job_id=child_job_id, kind=kind)
+        self._job_events[child_job_id] = asyncio.Event()  # create a event for the future job
         self.link_child(parent_job_id, child_job_id)
 
         def _enqueue_child(task: asyncio.Task) -> None:
@@ -211,6 +228,13 @@ class JobManager:
         :return: The result of the job.
         :raises KeyError: If the job_id is unknown.
         """
+        if job_id not in self._job_events:
+            raise KeyError(f"Unknown job id: {job_id}")
+        job_event = self._job_events[job_id]
+
+        # wait for the job to be submitted to self._tasks
+        await job_event.wait()
+        # now the job should be in ._tasks
         task = self._tasks.get(job_id)
         if not task:
             raise KeyError(f"Unknown job id: {job_id}")
@@ -224,6 +248,13 @@ class JobManager:
         :return: A list containing pairs of (job_id, result) from all children in the tree.
         :raises KeyError: If the job_id is unknown.
         """
+        
+        job_event = self._job_events[job_id]
+        if job_event not in self._job_events:
+            raise KeyError(f"Unknown job id: {job_id}")
+        await job_event.wait()
+
+        # now the jobs should be in the corresponding dicts
         parent_info = self._jobs[job_id]
         parent = self._tasks[job_id]
         if not parent and not parent_info:

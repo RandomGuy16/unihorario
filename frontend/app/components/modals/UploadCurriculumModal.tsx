@@ -3,6 +3,7 @@ import { Info, Upload } from 'lucide-react';
 import { useCatalog } from "@/app/providers/useCatalog";
 import { useCurriculum } from "@/app/providers/useCurriculum";
 import { SubmitCurriculumResponse } from "@/app/models/dto";
+import { toast } from "sonner";
 
 interface UploadCurriculumModalProps {
 	isOpen: boolean;
@@ -29,14 +30,42 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 		if (file) setFile(file)
 	}
 	const handleSubmit = async () => {
-		if (!file) return
-		// pass control to the curriculum service
-		const submitResponse: SubmitCurriculumResponse = await curriculumProvider.submitCurriculum(file)
-		// await the creation of the new curriculum to refresh the courses
-		await curriculumProvider.awaitCurriculumParsing(submitResponse.curriculumCreationJobId)
-		await catalogProvider.awaitCatalogRefresh(submitResponse.catalogRefreshJobId)
+		if (!file) {
+			toast.error("Selecciona un archivo antes de subirlo.")
+			return
+		}
 
-		onClose()
+		try {
+			// pass control to the curriculum service
+			const submitResponse: SubmitCurriculumResponse = await toast.promise(curriculumProvider.submitCurriculum(file), {
+				// carga el archivo
+				loading: "Subiendo archivo...",
+				success: (submitResponse: SubmitCurriculumResponse) => {
+					return `Archivo cargado exitósamente: ${submitResponse.metadata.school}`
+				},
+				error: "No se pudo cargar el archivo. Intenta de nuevo."
+			}).unwrap()
+			// close the modal and wait for the next promises to complete
+			onClose()
+
+			// lanza notificacion de espera al procesamiento del archivo
+			await toast.promise(curriculumProvider.awaitCurriculumParsing(submitResponse.curriculumCreationJobId), {
+				loading: "Procesando programación de asignaturas",
+				success: () => "Programación de asignaturas procesada exitósamente!",
+				error: "Ocurrió un error al generar la programación de asignaturas. Intenta de nuevo.",
+			}).unwrap()
+
+			await toast.promise(catalogProvider.awaitCatalogRefresh(submitResponse.catalogRefreshJobId), {
+				loading: "Actualizando catalogo",
+				success: "Catalogo actualizado!",
+				error: "No se pudo actualizar el catalogo. Intenta de nuevo."
+			}).unwrap()
+			// await the creation of the new curriculum to refresh the courses
+			// await curriculumProvider.awaitCurriculumParsing(submitResponse.curriculumCreationJobId)
+			// await catalogProvider.awaitCatalogRefresh(submitResponse.catalogRefreshJobId)
+		} catch (error) {
+			toast.error("No se pudo subir el archivo. Intenta de nuevo.")
+		}
 	}
 
 	return isOpen && (

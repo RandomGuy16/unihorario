@@ -1,4 +1,5 @@
 import { Catalog } from "@/app/models/Catalog";
+import { AwaitJobResponse } from "@/app/models/dto";
 
 
 export const CatalogService = {
@@ -21,10 +22,9 @@ export const CatalogService = {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    return await response.json()
+    const data: AwaitJobResponse<Catalog> = await response.json()
+    if (!data.success) throw new Error('Catalog refresh job failed')
+    return data.result
   }
 
-  // formatFilters(catalog: Catalog) {
-  //   return
-  // }
 }

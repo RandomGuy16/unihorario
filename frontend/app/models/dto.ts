@@ -7,3 +7,8 @@ export interface SubmitCurriculumResponse {
   curriculumCreationJobId: string;
   catalogRefreshJobId    : string;
 }
+
+export interface AwaitJobResponse<T> {
+  success: boolean;
+  result : T;
+}

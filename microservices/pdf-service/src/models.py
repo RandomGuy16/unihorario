@@ -135,6 +135,10 @@ class CreateCurriculumResponse(BaseModel):
     curriculumCreationJobId: str
     catalogRefreshJobId    : str
 
+class AwaitJobResponse(BaseModel):
+    success: bool
+    result: Any
+
 class AwaitTreeResponse(BaseModel):
     success: bool
     jobIds : list[str]  = Field(default_factory=list)

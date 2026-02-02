@@ -5,6 +5,7 @@ from pathlib import Path
 import pdfplumber
 import os
 from config import PDF_DIR_PATH, CAREERS_DIR_PATH, CATALOG_DIR_PATH
+from src.logger import logger
 from src.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
     UniversityCurriculum, CatalogCareerData, Catalog
 from typing import BinaryIO, List
@@ -90,19 +91,23 @@ def _parser_read_metadata(pdf_file: pdfplumber.PDF):
     :return: Parsed metadata values.
     :rtype: CareerCurriculumMetadata
     """
-    first_page = pdf_file.pages[0]
-    # Extract the fixed metadata block from the header area.
-    meta_lines = first_page.extract_text().split("\n")[3:9]
-    meta_lines = list(map(lambda line: line.split(":")[1].strip(), meta_lines))
+    try:
+        first_page = pdf_file.pages[0]
+        # Extract the fixed metadata block from the header area.
+        meta_lines = first_page.extract_text().split("\n")[3:9]
+        meta_lines = list(map(lambda line: line.split(":")[1].strip(), meta_lines))
 
-    return CareerCurriculumMetadata(
-        faculty=meta_lines[0],
-        school=meta_lines[1],
-        specialization=meta_lines[2],
-        studyPlan=meta_lines[3],
-        academicPeriod=meta_lines[4],
-        datePrinted=meta_lines[5]
-    )
+        return CareerCurriculumMetadata(
+            faculty=meta_lines[0],
+            school=meta_lines[1],
+            specialization=meta_lines[2],
+            studyPlan=meta_lines[3],
+            academicPeriod=meta_lines[4],
+            datePrinted=meta_lines[5]
+        )
+    except Exception:
+        logger.exception(f"Exception ocurred during metadata extraction from file")
+        raise
 
 
 def _parser_clean_table(table: List[List[str | None]]):

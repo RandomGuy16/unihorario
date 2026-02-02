@@ -7,6 +7,7 @@ import { CreditsContextProvider } from "@/app/providers/useCredits";
 import { ThemeContextProvider } from "@/app/providers/useTheme";
 import { CurriculumContextProvider } from "@/app/providers/useCurriculum";
 import { CatalogContextProvider } from "@/app/providers/useCatalog";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { ReactNode } from "react";
 
@@ -44,6 +45,7 @@ export default function RootLayout({ children, }: Readonly<{ children: ReactNode
             </CreditsContextProvider>
           </SidebarContextProvider>
         </ResponsiveContextProvider>
+        <Toaster />
       </ThemeContextProvider>
       </body>
     </html>

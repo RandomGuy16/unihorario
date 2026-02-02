@@ -1,7 +1,8 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.models import AwaitTreeResponse
+from src.models import AwaitJobResponse, AwaitTreeResponse
 from src.services import CatalogService, CurriculumService, JobManager
 from src.logger import logger
 
@@ -9,8 +10,16 @@ job_manager        = JobManager()
 catalog_service    = CatalogService(jobs=job_manager)
 curriculum_service = CurriculumService(catalog_service, jobs=job_manager)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # instead of loading an ML model
+    # we'll initialize the catalog service
+    await catalog_service.init()
+    yield
+
 origins=["*"]
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -18,6 +27,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
 
 @app.get("/helloworld")
 async def main():
@@ -43,23 +53,28 @@ async def post_career_curriculum(file: UploadFile = File(...)):
     try:
         logger.info(f"Received pdf upload")
         return await curriculum_service.receive_curriculum(file.file)
+    except IndexError:
+        raise HTTPException(
+            status_code=400,
+            detail="PDF uploaded is not an assignments programming from SUM")
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("api/jobs/await_job/{job_id}")
+@app.get("/api/jobs/await_job/{job_id}")
 async def await_job(job_id: str):
     try:
         logger.info(f"Awaiting job {job_id}")
-        result = await job_manager.await_job(job_id)
-        return dict(
-            status="OK",
+        # result = await job_manager.await_job(job_id)
+        result = await curriculum_service.jobs.await_job(job_id)
+        return AwaitJobResponse(
+            success=True,
             result=result
         )
     except KeyError:
-        return HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/jobs/await_tree/{job_id}")
 async def await_tree(job_id: str):
@@ -71,6 +86,6 @@ async def await_tree(job_id: str):
             jobIds=[result[0] for result in results]
         )
     except KeyError:
-        return HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
