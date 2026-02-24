@@ -25,4 +25,5 @@ dotenv.load_dotenv(dotenv_path=DOTENV_PATH, verbose=True)
 CAREERS_DIR_PATH = Path.joinpath(PROJECT_ROOT, dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="CAREERS_DIR"))
 CATALOG_DIR_PATH = Path.joinpath(PROJECT_ROOT, dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="CATALOG_DIR"))
 PDF_DIR_PATH     = Path.joinpath(PROJECT_ROOT, dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="PDF_DIR"))
+DATABASE_URL     = dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="DATABASE_URL") or "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
 

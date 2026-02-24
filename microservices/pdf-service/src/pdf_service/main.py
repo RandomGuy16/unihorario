@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pdf_service.domain.models import AwaitJobResponse, AwaitTreeResponse
 from pdf_service.domain.services import CatalogService, CurriculumService, JobManager
 from pdf_service.core.logger import logger
+from contextlib import asynccontextmanager
+from pdf_service.domain.db import engine
+
 
 job_manager        = JobManager()
 catalog_service    = CatalogService(jobs=job_manager)
@@ -15,7 +18,16 @@ async def lifespan(app: FastAPI):
     # instead of loading an ML model
     # we'll initialize the catalog service
     await catalog_service.init()
+
+    # now initialize the connection with the database
+    async with engine.begin() as conn:
+        await conn.run_sync(lambda _: None)
+    
+    # before startup
     yield
+    # on shutdown
+    await engine.dispose()
+
 
 origins=["*"]
 app = FastAPI(lifespan=lifespan)
