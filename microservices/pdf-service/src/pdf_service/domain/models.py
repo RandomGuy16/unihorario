@@ -3,6 +3,22 @@ from typing import List, Dict, Any
 
 
 class CareerCurriculumMetadata(BaseModel):
+    """Metadata extracted from a parsed career curriculum document.
+
+    :ivar faculty: Faculty name.
+    :vartype faculty: str
+    :ivar school: School or career name.
+    :vartype school: str
+    :ivar specialization: Specialization label.
+    :vartype specialization: str
+    :ivar studyPlan: Study plan identifier from source data.
+    :vartype studyPlan: str
+    :ivar academicPeriod: Academic period string.
+    :vartype academicPeriod: str
+    :ivar datePrinted: Date printed value extracted from the document.
+    :vartype datePrinted: str
+    """
+
     faculty: str
     school: str
     specialization: str
@@ -12,38 +28,26 @@ class CareerCurriculumMetadata(BaseModel):
 
 
 class Schedule(BaseModel):
-    """
-    Represents a schedule containing various details such as assignment,
-    associated identifiers, timing, and teacher information.
+    """Represents one schedule slot for a course section.
 
-    The Schedule class is designed to store information regarding a specific
-    schedule. It includes attributes for identifying the assignment, the
-    timing details for the schedule, and metadata such as the teacher and
-    section details. This can be utilized to manage or query scheduled
-    events in educational or organizational settings.
-
-    :ivar assignment: The name or title of the specific assignment within
-        the schedule.
-    :type assignment: str
-    :ivar assignmentId: Unique identifier for the assignment associated with
-        this schedule.
-    :type assignmentId: str
-    :ivar day: The day of the week or specific date for the schedule.
-    :type day: str
-    :ivar start: The start time for the scheduled activity.
-    :type start: str
-    :ivar end: The end time for the scheduled activity.
-    :type end: str
-    :ivar type: The type or category of the schedule (e.g., lecture, lab).
-    :type type: str
-    :ivar scheduleNumber: The schedule's sequence number, providing
-        unique order or classification.
-    :type scheduleNumber: int
-    :ivar sectionNumber: The specific section number associated with this
-        schedule.
-    :type sectionNumber: int
-    :ivar teacher: The name of the teacher responsible for this schedule.
-    :type teacher: str
+    :ivar assignment: Assignment name.
+    :vartype assignment: str
+    :ivar assignmentId: External assignment identifier.
+    :vartype assignmentId: str
+    :ivar day: Day label.
+    :vartype day: str
+    :ivar start: Start time.
+    :vartype start: str
+    :ivar end: End time.
+    :vartype end: str
+    :ivar type: Session type label.
+    :vartype type: str
+    :ivar scheduleNumber: Sequence number for the slot.
+    :vartype scheduleNumber: int
+    :ivar sectionNumber: Source section number for traceability.
+    :vartype sectionNumber: int
+    :ivar teacher: Teacher name for this slot.
+    :vartype teacher: str
     """
     assignment: str
     assignmentId: str
@@ -57,31 +61,26 @@ class Schedule(BaseModel):
 
 
 class CourseSection(BaseModel):
-    """
-    Represents a course section in a school or system.
+    """Represents one course section and its schedule slots.
 
-    This class is used to store and manage information regarding a specific section
-    of a course, including details about assignments, schedules, instructors, and
-    other essential attributes.
-
-    :ivar assignment: Name of the assigned task or content.
-    :type assignment: str
-    :ivar assignmentId: Unique identifier for the assignment.
-    :type assignmentId: str
-    :ivar sectionNumber: The numeric designation of the course section.
-    :type sectionNumber: int
-    :ivar teacher: Name of the teacher or instructor for the section.
-    :type teacher: str
-    :ivar schedules: List of schedules associated with the section.
-    :type schedules: List[Schedule]
-    :ivar credits: Number of academic credits assigned to the section.
-    :type credits: int
-    :ivar studyPlan: Academic year or session associated with the section.
-    :type studyPlan: str
-    :ivar maxStudents: Maximum number of students that can enroll in the section.
-    :type maxStudents: int
-    :ivar courseVisible: Determines if the course section is visible to others.
-    :type courseVisible: bool
+    :ivar assignment: Assignment name.
+    :vartype assignment: str
+    :ivar assignmentId: External assignment identifier.
+    :vartype assignmentId: str
+    :ivar sectionNumber: Numeric section identifier.
+    :vartype sectionNumber: int
+    :ivar teacher: Main teacher name.
+    :vartype teacher: str
+    :ivar schedules: Schedule entries linked to this section.
+    :vartype schedules: List[Schedule]
+    :ivar credits: Credit amount.
+    :vartype credits: int
+    :ivar studyPlan: Study plan identifier.
+    :vartype studyPlan: str
+    :ivar maxStudents: Enrollment capacity.
+    :vartype maxStudents: int
+    :ivar courseVisible: Visibility flag from source.
+    :vartype courseVisible: bool
     """
     assignment   : str            = ''
     assignmentId : str            = ''
@@ -95,26 +94,68 @@ class CourseSection(BaseModel):
 
 
 class Cycle(BaseModel):
+    """Represents one academic cycle and its course sections.
+
+    :ivar cycle: Cycle number (1-10 depending on the career).
+    :vartype cycle: str
+    :ivar courseSections: Course sections to be initiated in this cycle.
+    :vartype courseSections: List[CourseSection]
+    """
     cycle: str
     courseSections: List[CourseSection]
 
 
 class CareerCurriculum(BaseModel):
+    """Represents one career curriculum for the study plan
+
+    :ivar metadata: More details about the career curriculum, like faculty, study plan, academic period, ....
+    :vartype metadata: CareerCurriculumMetadata
+    :ivar cycles: List of cycles that have course sections running for the study plan
+    :vartype cycle: List[Cycle]
+    """
     metadata: CareerCurriculumMetadata
     cycles: List[Cycle]
 
 
 class Year(BaseModel):
+    """
+    Represents one study plan containing many career curriculums
+    A study plan takes the name of the year it was developed and launched in.
+    Each faculty develops them independently, but for simplicity, this will
+    own many career curriculums with the year in common.
+
+    :ivar year: the year it got developed
+    :vartype year: str
+    :ivar careerCurriculums: List of career curriculums
+    :vartype careerCurriculums: List[CareerCurriculum]
+    """
     year: str
     careerCurriculums: List[CareerCurriculum]
 
 
 class UniversityCurriculum(BaseModel):
+    """Represents the set of all study plans in the university
+
+    :ivar years: The study plans in the university
+    :vartype years: List[Year]
+    """
     years: List[Year]
 
 
 # here goes the catalog
 class CatalogCareerData(BaseModel):
+    """Catalog details for a single career entry.
+
+    :ivar studyPlans: Available study plan identifiers for this career.
+    :vartype studyPlans: List[str]
+    :ivar cycles: Available cycle labels for this career.
+    :vartype cycles: List[str]
+    :ivar faculty: Faculty name.
+    :vartype faculty: str
+    :ivar career: Career display name.
+    :vartype career: str
+    """
+
     studyPlans: List[str]
     cycles: List[str]
     faculty: str
@@ -122,6 +163,12 @@ class CatalogCareerData(BaseModel):
 
 
 class Catalog(BaseModel):
+    """Catalog of careers keyed by career identifier.
+
+    :ivar careers: Mapping from career key to career catalog data.
+    :vartype careers: Dict[str, CatalogCareerData]
+    """
+
     careers: Dict[str, CatalogCareerData]
 
 
@@ -129,16 +176,46 @@ class Catalog(BaseModel):
 
 
 class CreateCurriculumResponse(BaseModel):
+    """Response payload returned when curriculum creation is queued.
+
+    :ivar success: Indicates whether request handling succeeded.
+    :vartype success: bool
+    :ivar metadata: Curriculum metadata extracted from input.
+    :vartype metadata: CareerCurriculumMetadata
+    :ivar curriculumCreationJobId: Job id for curriculum creation processing.
+    :vartype curriculumCreationJobId: str
+    :ivar catalogRefreshJobId: Job id for catalog refresh processing.
+    :vartype catalogRefreshJobId: str
+    """
+
     success                : bool
     metadata               : CareerCurriculumMetadata
     curriculumCreationJobId: str
     catalogRefreshJobId    : str
 
 class AwaitJobResponse(BaseModel):
+    """Response payload for waiting on a single job result.
+
+    :ivar success: Indicates whether the await operation succeeded.
+    :vartype success: bool
+    :ivar result: Job result payload.
+    :vartype result: Any
+    """
+
     success: bool
     result: Any
 
 class AwaitTreeResponse(BaseModel):
+    """Response payload for waiting on a job tree result.
+
+    :ivar success: Indicates whether the await operation succeeded.
+    :vartype success: bool
+    :ivar jobIds: Ordered job ids resolved in the tree.
+    :vartype jobIds: list[str]
+    :ivar results: Result payloads aligned with ``jobIds``.
+    :vartype results: list[Any]
+    """
+
     success: bool
     jobIds : list[str]  = Field(default_factory=list)
     results: list[Any] = Field(default_factory=list)
