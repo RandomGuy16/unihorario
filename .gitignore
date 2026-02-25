@@ -258,6 +258,9 @@ cython_debug/
 # Marimo
 marimo/_static/
 marimo/_lsp/
+
+# Local planning notes
+postgres-modeling-plan.md
 __marimo__/
 
 # Streamlit
