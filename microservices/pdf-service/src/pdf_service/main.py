@@ -90,6 +90,7 @@ async def await_job(job_id: str):
 @app.get("/api/jobs/await_tree/{job_id}")
 async def await_tree(job_id: str):
     try:
+        logger.info(f"Awaiting tree, root: {job_id}")
         results = await job_manager.await_tree(job_id)
         return AwaitTreeResponse(
             success=True,

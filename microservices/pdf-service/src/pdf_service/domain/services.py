@@ -3,6 +3,7 @@ import tempfile
 from datetime import datetime, timezone
 import pathlib as path
 from enum import Enum
+from itertools import chain
 from typing import Dict, BinaryIO, Optional, Any, Callable, Coroutine, Tuple
 from pydantic.v1 import BaseModel, Field
 from pdf_service.core.logger import logger
@@ -240,7 +241,7 @@ class JobManager:
             raise KeyError(f"Unknown job id: {job_id}")
         return await task
 
-    async def await_tree(self, job_id: str) -> Tuple[Tuple[str, Any], ...]:
+    async def await_tree(self, job_id: str):
         """
         Waits for a job and all its descendant jobs to complete.
 
@@ -249,9 +250,9 @@ class JobManager:
         :raises KeyError: If the job_id is unknown.
         """
         
-        job_event = self._job_events[job_id]
-        if job_event not in self._job_events:
+        if job_id not in self._job_events:
             raise KeyError(f"Unknown job id: {job_id}")
+        job_event = self._job_events[job_id]
         await job_event.wait()
 
         # now the jobs should be in the corresponding dicts
@@ -263,7 +264,9 @@ class JobManager:
         try:
             result = await parent
             children_results = await asyncio.gather(*(self.await_tree(child) for child in parent_info.children))
-            return (parent_info.job_id, result), *children_results
+            # this important line unpacks self.await_tree(child), because it returns a tuple of pairs
+            all_children_pairs = tuple(chain.from_iterable(children_results))
+            return ((parent_info.job_id, result),) + all_children_pairs
         except Exception as e:
             logger.exception(f"Error occurred during tree job execution: {e}")
             raise
