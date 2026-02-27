@@ -359,7 +359,7 @@ class CurriculumService:
     """
     Service for processing and retrieving university curricula.
     """
-    def __init__(self, catalog_service: CatalogService, jobs: JobManager):
+    def __init__(self, catalog_service: CatalogService, jobs: JobManager, uow_factory):
         """
         Initializes the CurriculumService.
 
@@ -368,6 +368,7 @@ class CurriculumService:
         """
         self.catalog_service = catalog_service
         self.jobs            = jobs
+        self.uow_factory     = uow_factory  # unit of work factory
 
     async def get_curriculum(self, school, job_id: str = ''):
         """
@@ -380,11 +381,14 @@ class CurriculumService:
         :param job_id: Optional background job identifier.
         :return: The UniversityCurriculum object.
         """
-        if job_id:
-            # await for the background job result
-            return await self.jobs.await_job(job_id)
-        # if there's no job_id, just read without any problems... I hope so
-        return await asyncio.to_thread(read_career, school)
+        async with self.uow_factory() as uow:
+            self.uow = uow
+            if job_id:
+                # await for the background job result
+                return await self.jobs.await_job(job_id)
+            # if there's no job_id, just read without any problems... I hope so
+            return await asyncio.to_thread(read_career, school)
+
 
     async def get_curriculum_metadata(self, pdf: BinaryIO | path.Path):
         """
