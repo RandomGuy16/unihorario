@@ -4,13 +4,16 @@ from datetime import datetime, timezone
 import pathlib as path
 from enum import Enum
 from itertools import chain
-from typing import Dict, BinaryIO, Optional, Any, Callable, Coroutine, Tuple
+from typing import Dict, BinaryIO, Optional, Any, Callable, Coroutine
+
 from pydantic.v1 import BaseModel, Field
 from pdf_service.core.logger import logger
-from pdf_service.domain.models import UniversityCurriculum, Catalog, CreateCurriculumResponse
-from pdf_service.domain.data_transform import parse_pdf_sync, read_career, get_file_metadata, create_catalog
-from pdf_service.core.config import CAREERS_DIR_PATH
+from pdf_service.domain.models import UniversityCurriculum, Catalog, CreateCurriculumResponse, CareerCurriculum, \
+    CareerCurriculumMetadata, CatalogCareerData
+from pdf_service.domain.data_transform import parse_pdf_sync, get_file_metadata
 import uuid
+
+from pdf_service.domain.uow import UnitOfWork
 
 
 class JobStatus(str, Enum):
@@ -303,7 +306,7 @@ class CatalogService:
     """
     Service for managing the career catalog.
     """
-    def __init__(self, jobs: JobManager):
+    def __init__(self, jobs: JobManager, uow_factory: Callable[..., UnitOfWork]):
         """
         Initializes the CatalogService.
 
@@ -311,6 +314,7 @@ class CatalogService:
         """
         self.data: Catalog = Catalog(careers={})
         self.jobs          = jobs
+        self.uow_factory   = uow_factory
 
     async def init(self):
         """
@@ -319,22 +323,49 @@ class CatalogService:
         # Startup of the service from the main app
         await self.refresh_catalog()
 
-    def get_catalog(self):
+    async def get_catalog(self):
         """
         Returns the current catalog data.
 
         :return: The Catalog object.
         """
-        return self.data
+        async with self.uow_factory() as uow:
+            # get the catalog from the database
+            return await uow.catalogs.get()
+
+    async def add_career(self, career: CareerCurriculum):
+        async with self.uow_factory() as uow:
+            # retrieve the catalog and the current career instance
+            catalog = await uow.catalogs.get()
+            career_instance = catalog.careers.get(career.metadata.school)
+
+            # if already added nothing to do
+            if career_instance and career.metadata.studyPlan in career_instance.studyPlans:
+                return
+
+            career_data = CatalogCareerData(
+                studyPlans=[career.metadata.studyPlan],
+                cycles=[cycle.cycle for cycle in career.cycles],
+                faculty=career.metadata.faculty,
+                career=career.metadata.school
+            )
+            # if there are more study plans available, add them
+            if career_instance:
+                for study_plan in career_instance.studyPlans:
+                    career_data.studyPlans.append(study_plan)
+
+            # add metadata to the catalog
+            await uow.catalogs.save(career_data)
+
 
     async def refresh_catalog(self):
         """
-        Refreshes the catalog by reading the careers directory.
+        Refreshes the catalog: gathers the careers in db and returns the catalog
 
         :return: The updated Catalog object.
         """
-        logger.debug(CAREERS_DIR_PATH)
-        self.data = await asyncio.to_thread(create_catalog)
+        async with self.uow_factory() as uow:
+            self.data = await uow.catalogs.get()
         return self.data
 
     def refresh_catalog_in_background(self) -> str:
@@ -359,7 +390,7 @@ class CurriculumService:
     """
     Service for processing and retrieving university curricula.
     """
-    def __init__(self, catalog_service: CatalogService, jobs: JobManager, uow_factory):
+    def __init__(self, catalog_service: CatalogService, jobs: JobManager, uow_factory: Callable[..., UnitOfWork]):
         """
         Initializes the CurriculumService.
 
@@ -382,12 +413,12 @@ class CurriculumService:
         :return: The UniversityCurriculum object.
         """
         async with self.uow_factory() as uow:
-            self.uow = uow
             if job_id:
                 # await for the background job result
                 return await self.jobs.await_job(job_id)
             # if there's no job_id, just read without any problems... I hope so
-            return await asyncio.to_thread(read_career, school)
+            # return await asyncio.to_thread(read_career, school)
+            return await uow.curriculums.get_by_school(school)
 
 
     async def get_curriculum_metadata(self, pdf: BinaryIO | path.Path):
@@ -406,7 +437,12 @@ class CurriculumService:
         :param pdf_file: The path or binary content of the PDF file.
         :return: The parsed UniversityCurriculum.
         """
-        return await asyncio.to_thread(parse_pdf_sync, pdf_file)
+        result: UniversityCurriculum = await asyncio.to_thread(parse_pdf_sync, pdf_file)
+        # send the result to the database
+        async with self.uow_factory() as uow:
+            await uow.curriculums.save(result)
+
+        return result
 
 
     # async def parse_multiple_pdfs(self, pdf_files: List[path.Path]) -> tuple[Any]:

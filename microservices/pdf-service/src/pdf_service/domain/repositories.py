@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from pdf_service.domain.models import (
-    UniversityCurriculum, Catalog, CareerCurriculum
+    UniversityCurriculum, Catalog, CareerCurriculum, CatalogCareerData
 )
 from pdf_service.domain.orm_models import (
     YearORM, CatalogCareerORM, CareerCurriculumORM, CycleORM, CourseSectionORM
@@ -15,7 +15,7 @@ from pdf_service.domain.mappers import (
     catalog_from_orm,
     catalog_to_orm,
     career_curriculum_to_orm,
-    career_curriculum_from_orm
+    career_curriculum_from_orm, catalog_career_data_to_orm
 )
 
 # interfaces for the repositories
@@ -95,6 +95,7 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
 
 class CatalogRepository(Protocol):
     async def replace_all(self, catalog: Catalog) -> None: ...
+    async def save(self, catalog_career: CatalogCareerData) -> None: ...
     async def get(self) -> Catalog: ...
 
 
@@ -118,6 +119,20 @@ class SqlCatalogRepository(CatalogRepository):
         )
         rows = (await self.session.scalars(stmt)).unique().all()
         return catalog_from_orm(rows)
+
+    async def save(self, catalog_career: CatalogCareerData) -> None:
+        stmt = (
+            select(CatalogCareerORM)
+            .where(CatalogCareerORM.career_key == catalog_career.career)
+        )
+
+        old = (await self.session.execute(stmt)).scalar_one_or_none()
+        if old:
+            await self.session.delete(old)
+
+        orm_obj = catalog_career_data_to_orm(catalog_career)
+        self.session.add(orm_obj)
+
 
 
 class CareerCurriculumRepository(Protocol):

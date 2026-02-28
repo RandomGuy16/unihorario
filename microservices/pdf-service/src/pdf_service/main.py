@@ -20,7 +20,10 @@ async def lifespan(app: FastAPI):
 
     # define state for some services
     app.state.job_manager = JobManager()
-    app.state.catalog_service = CatalogService(jobs=app.state.job_manager)
+    app.state.catalog_service = CatalogService(
+        jobs=app.state.job_manager,
+        uow_factory=uow_factory
+    )
     app.state.curriculum_service = CurriculumService(
         app.state.catalog_service,
         jobs=app.state.job_manager,
@@ -55,7 +58,7 @@ async def main():
 
 @app.get("/api/catalog")
 async def get_catalog():
-    return app.state.catalog_service.get_catalog()
+    return await app.state.catalog_service.get_catalog()
 
 
 @app.get("/api/curriculum")
