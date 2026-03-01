@@ -266,7 +266,7 @@ class CatalogCareerORM(Base, TimestampMixin):
 
     :ivar id: Primary key UUID.
     :vartype id: uuid.UUID
-    :ivar career_key: Unique key used in catalog dictionaries.
+    :ivar career_key: Unique key used in catalog dictionaries (the career name).
     :vartype career_key: str
     :ivar faculty: Faculty label.
     :vartype faculty: str

@@ -1,5 +1,7 @@
+"""Repository interfaces and SQLAlchemy implementations for persistence."""
+
 from typing import Protocol
-from sqlalchemy import select, delete, insert
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,6 +23,8 @@ from pdf_service.domain.mappers import (
 # interfaces for the repositories
 
 class UniversityCurriculumRepository(Protocol):
+    """Contract for UniversityCurriculum aggregate persistence."""
+
     async def save(self, university_curriculum: UniversityCurriculum) -> None: ...
     async def get_by_school(self, school: str) -> UniversityCurriculum | None: ...
     async def get_by_school_and_year(self, school: str, year: str) -> UniversityCurriculum | None: ...
@@ -28,6 +32,11 @@ class UniversityCurriculumRepository(Protocol):
 
 # static method, well it's a function now
 def _year_tree_stmt():
+    """Build a query that eager-loads the curriculum tree.
+
+    :return: Select statement for YearORM with nested relationships loaded.
+    :rtype: sqlalchemy.sql.Select
+    """
     # this loads everything, yeah, everything
     return (
         select(YearORM)
@@ -41,17 +50,36 @@ def _year_tree_stmt():
 
 
 class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
+    """SQLAlchemy repository for UniversityCurriculum aggregates.
+
+    :param session: Active async database session.
+    :type session: AsyncSession
+    """
     # esta es la clase que hace el trabajo de guardar en la base de datos
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session  # agarra la async session de la db
 
     async def save(self, university_curriculum: UniversityCurriculum) -> None:
+        """Persist a university curriculum aggregate.
+
+        :param university_curriculum: Curriculum aggregate to persist.
+        :type university_curriculum: UniversityCurriculum
+        :return: None
+        :rtype: None
+        """
         # para añadir un university curriculum se le sacan los year y estos se guardan
         year_entities = university_curriculum_to_orm(university_curriculum)
         self.session.add_all(year_entities)
 
     async def get_by_school(self, school: str) -> UniversityCurriculum | None:
+        """Fetch curriculum aggregate by school key.
+
+        :param school: School/career key.
+        :type school: str
+        :return: Matching aggregate or None.
+        :rtype: UniversityCurriculum | None
+        """
         # este metodo es distinto al repo de career curriculum:
         # devuelve el agregado completo UniversityCurriculum (years -> careers -> cycles -> sections -> schedules)
         stmt = (
@@ -67,6 +95,15 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
         return university_curriculum_from_orm(rows)
 
     async def get_by_school_and_year(self, school: str, year: str) -> UniversityCurriculum | None:
+        """Fetch curriculum aggregate by school and year.
+
+        :param school: School/career key.
+        :type school: str
+        :param year: Study plan year.
+        :type year: str
+        :return: Matching aggregate or None.
+        :rtype: UniversityCurriculum | None
+        """
         # en el futuro pienso hacer mas interactivo el sidebar del frontend
         # por ahora se requiere de la escuela y el plan de estudios para obtener un university curriculum
         # esta es la query de SQL a ejecutar
@@ -84,6 +121,13 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
         return university_curriculum_from_orm(rows)
 
     async def list_years_for_school(self, school: str) -> list[str]:
+        """List distinct available years for a school key.
+
+        :param school: School/career key.
+        :type school: str
+        :return: Sorted list of years.
+        :rtype: list[str]
+        """
         stmt = (
             select(YearORM.year)
             .join(YearORM.career_curriculums)
@@ -94,22 +138,41 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
         return list((await self.session.scalars(stmt)).all())
 
 class CatalogRepository(Protocol):
+    """Contract for catalog persistence operations."""
+
     async def replace_all(self, catalog: Catalog) -> None: ...
     async def save(self, catalog_career: CatalogCareerData) -> None: ...
     async def get(self) -> Catalog: ...
 
 
 class SqlCatalogRepository(CatalogRepository):
+    """SQLAlchemy repository for catalog persistence.
+
+    :param session: Active async database session.
+    :type session: AsyncSession
+    """
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def replace_all(self, catalog: Catalog) -> None:
+        """Replace entire catalog content.
+
+        :param catalog: New catalog snapshot.
+        :type catalog: Catalog
+        :return: None
+        :rtype: None
+        """
         # TODO: redo the delete, think about what to delete
         # await self.session.execute("DELETE FROM catalog_careers")
         await self.session.execute(delete(CatalogCareerORM))  # do the catalog again
         self.session.add_all(catalog_to_orm(catalog))
 
     async def get(self) -> Catalog:
+        """Fetch catalog with study plans and cycles.
+
+        :return: Catalog domain object.
+        :rtype: Catalog
+        """
         stmt = (
             select(CatalogCareerORM)
             .options(
@@ -121,6 +184,13 @@ class SqlCatalogRepository(CatalogRepository):
         return catalog_from_orm(rows)
 
     async def save(self, catalog_career: CatalogCareerData) -> None:
+        """Upsert one catalog career entry.
+
+        :param catalog_career: Career entry payload.
+        :type catalog_career: CatalogCareerData
+        :return: None
+        :rtype: None
+        """
         stmt = (
             select(CatalogCareerORM)
             .where(CatalogCareerORM.career_key == catalog_career.career)
@@ -130,21 +200,35 @@ class SqlCatalogRepository(CatalogRepository):
         if old:
             await self.session.delete(old)
 
-        orm_obj = catalog_career_data_to_orm(catalog_career)
+        orm_obj = catalog_career_data_to_orm(catalog_career, career_key=catalog_career.career)
         self.session.add(orm_obj)
 
 
 
 class CareerCurriculumRepository(Protocol):
+    """Contract for single CareerCurriculum persistence."""
+
     async def save(self, career_curriculum: CareerCurriculum) -> None: ...
     async def get_by_id(self, career_id: str) -> CareerCurriculum | None: ...
     async def get_by_school(self, school: str) -> CareerCurriculum | None: ...
 
 class SqlCareerCurriculumRepository(CareerCurriculumRepository):
+    """SQLAlchemy repository for CareerCurriculum persistence.
+
+    :param session: Active async database session.
+    :type session: AsyncSession
+    """
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def save(self, career_curriculum: CareerCurriculum) -> None:
+        """Upsert a career curriculum by natural keys.
+
+        :param career_curriculum: Career curriculum payload.
+        :type career_curriculum: CareerCurriculum
+        :return: None
+        :rtype: None
+        """
         m = career_curriculum.metadata
         # remove the previous one, this kinda works like an update
         stmt = (
@@ -164,6 +248,13 @@ class SqlCareerCurriculumRepository(CareerCurriculumRepository):
         self.session.add(orm_obj)
 
     async def get_by_id(self, career_id: str) -> CareerCurriculum | None:
+        """Fetch a career curriculum by id.
+
+        :param career_id: Career curriculum id.
+        :type career_id: str
+        :return: Matching curriculum or None.
+        :rtype: CareerCurriculum | None
+        """
         # simple statement
         stmt = (
             select(CareerCurriculumORM)
@@ -176,6 +267,13 @@ class SqlCareerCurriculumRepository(CareerCurriculumRepository):
         return career_curriculum_from_orm(rows)
 
     async def get_by_school(self, school: str) -> CareerCurriculum | None:
+        """Fetch a career curriculum by school key.
+
+        :param school: School/career key.
+        :type school: str
+        :return: Matching curriculum or None.
+        :rtype: CareerCurriculum | None
+        """
         stmt = (
             select(CareerCurriculumORM)
             .where(CareerCurriculumORM.school == school)
