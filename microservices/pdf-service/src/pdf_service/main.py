@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from pdf_service.domain.exceptions import CurriculumNotFoundError
 from pdf_service.domain.models import AwaitJobResponse, AwaitTreeResponse
 from pdf_service.domain.services import CatalogService, CurriculumService, JobManager
 from pdf_service.core.logger import logger
@@ -65,8 +67,8 @@ async def get_catalog():
 async def get_career_curriculum(school: str=''):
     try:
         return await app.state.curriculum_service.get_curriculum(school=school)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=f"File not found: {str(e)}")
+    except CurriculumNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -1,16 +1,6 @@
 import pytest
-import pytest_asyncio
 import asyncio
-from httpx import ASGITransport, AsyncClient
 from pdf_service.main import app
-
-@pytest_asyncio.fixture
-async def client():
-    """Create API client with app lifespan enabled."""
-    # ASGITransport in this httpx version does not run lifespan automatically.
-    async with app.router.lifespan_context(app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            yield ac
 
 @pytest.mark.asyncio
 async def test_helloworld(client):

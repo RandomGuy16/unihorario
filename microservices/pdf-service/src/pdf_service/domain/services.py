@@ -8,6 +8,7 @@ from typing import Dict, BinaryIO, Optional, Any, Callable, Coroutine
 
 from pydantic.v1 import BaseModel, Field
 from pdf_service.core.logger import logger
+from pdf_service.domain.exceptions import CurriculumNotFoundError
 from pdf_service.domain.models import UniversityCurriculum, Catalog, CreateCurriculumResponse, CareerCurriculum, \
     CareerCurriculumMetadata, CatalogCareerData
 from pdf_service.domain.data_transform import parse_pdf_sync, get_file_metadata
@@ -413,12 +414,18 @@ class CurriculumService:
         :return: The UniversityCurriculum object.
         """
         async with self.uow_factory() as uow:
+            curriculum: UniversityCurriculum
             if job_id:
                 # await for the background job result
-                return await self.jobs.await_job(job_id)
-            # if there's no job_id, just read without any problems... I hope so
-            # return await asyncio.to_thread(read_career, school)
-            return await uow.curriculums.get_by_school(school)
+                curriculum = await self.jobs.await_job(job_id)
+            else:
+                # if there's no job_id, just read without any problems... I hope so
+                # return await asyncio.to_thread(read_career, school)
+                curriculum = await uow.curriculums.get_by_school(school)
+
+            if not curriculum:
+                raise CurriculumNotFoundError(school=school)
+            return curriculum
 
 
     async def get_curriculum_metadata(self, pdf: BinaryIO | path.Path):
