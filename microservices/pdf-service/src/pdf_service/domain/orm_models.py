@@ -48,7 +48,7 @@ class YearORM(Base, TimestampMixin):
     __tablename__ = "years"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    year: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    year: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
 
     # relationship tells sqlalchemy that this has many CareerCurriculumORM
     # and that when this gets deleted, delete its children that are now orphaned

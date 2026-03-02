@@ -1,17 +1,9 @@
-import time
-from pathlib import Path
-
 import pytest
-from pdf_service.domain.models import CreateCurriculumResponse, Catalog
-from pdf_service.core.config import TESTS_DIR_PATH
-from tests.conftests import client
+from pdf_service.domain.models import AwaitJobResponse, Catalog, CreateCurriculumResponse, UniversityCurriculum
 
 
 @pytest.mark.asyncio
-async def test_smoke_post_curriculum_success(client):
-    pdf_path = Path.joinpath(TESTS_DIR_PATH, "fixtures", "Programacion_Asignaturas.pdf")
-    pdf_bytes = pdf_path.read_bytes()
-
+async def test_smoke_post_curriculum_success(client, pdf_bytes):
     files = {
         "file": ("Programacion_Asignaturas.pdf", pdf_bytes, "application/pdf")
     }
@@ -31,22 +23,19 @@ async def test_smoke_get_catalog(client):
     catalog = Catalog(**res.json())
     assert hasattr(catalog, "careers")
 
+
 @pytest.mark.asyncio
-async def test_smoke_get_curriculum(client):
-    res = await client.get("/api/curriculum")
-    assert res.status_code == 404
-
-    pdf_path = Path.joinpath(TESTS_DIR_PATH, "fixtures", "Programacion_Asignaturas.pdf")
-    pdf_bytes = pdf_path.read_bytes()
-
+async def test_smoke_post_then_await_job(client, pdf_bytes):
     files = {
         "file": ("Programacion_Asignaturas.pdf", pdf_bytes, "application/pdf")
     }
-    res = await client.post("/api/curriculum", files=files)
-    assert res.status_code == 200
+    post_res = await client.post("/api/curriculum", files=files)
+    assert post_res.status_code == 200
+    create_response = CreateCurriculumResponse(**post_res.json())
 
-    time.sleep(1)
-
-    res = await client.get("/api/curriculum/1 - E.P. De Ingenier\xc3\xada De Sistemas")
-    assert res.status_code == 200
-
+    await_res = await client.get(f"/api/jobs/await_job/{create_response.curriculumCreationJobId}")
+    assert await_res.status_code == 200
+    payload = AwaitJobResponse(**await_res.json())
+    assert payload.success is True
+    parsed_curriculum = UniversityCurriculum.model_validate(payload.result)
+    assert parsed_curriculum.years

@@ -1,0 +1,50 @@
+import pytest
+
+from pdf_service.domain.models import AwaitJobResponse, CreateCurriculumResponse, UniversityCurriculum
+
+
+@pytest.mark.asyncio
+async def test_e2e_upload_await_and_get_curriculum_by_school(client, pdf_bytes):
+    files = {
+        "file": ("Programacion_Asignaturas.pdf", pdf_bytes, "application/pdf")
+    }
+
+    post_res = await client.post("/api/curriculum", files=files)
+    assert post_res.status_code == 200
+    create_response = CreateCurriculumResponse(**post_res.json())
+
+    # get the curriculum via the job id
+    parse_res = await client.get(f"/api/jobs/await_job/{create_response.curriculumCreationJobId}")
+    assert parse_res.status_code == 200
+    parse_payload = AwaitJobResponse(**parse_res.json())
+    assert parse_payload.success is True
+    parsed_curriculum = UniversityCurriculum.model_validate(parse_payload.result)
+    assert parsed_curriculum.years
+
+    # get the curriculum via the school name
+    # school = parsed_curriculum.years[0].careerCurriculums[0].metadata.school
+    school = create_response.metadata.school
+    get_res = await client.get("/api/curriculum", params={"school": school})
+    assert get_res.status_code == 200
+    fetched_curriculum = UniversityCurriculum.model_validate(get_res.json())
+    assert fetched_curriculum.years
+    assert fetched_curriculum.years[0].careerCurriculums[0].metadata.school == school
+
+
+@pytest.mark.asyncio
+async def test_e2e_await_tree_returns_parse_and_refresh_jobs(client, pdf_bytes):
+    files = {
+        "file": ("Programacion_Asignaturas.pdf", pdf_bytes, "application/pdf")
+    }
+
+    post_res = await client.post("/api/curriculum", files=files)
+    assert post_res.status_code == 200
+    create_response = CreateCurriculumResponse(**post_res.json())
+
+    tree_res = await client.get(f"/api/jobs/await_tree/{create_response.curriculumCreationJobId}")
+    assert tree_res.status_code == 200
+    tree_payload = tree_res.json()
+    assert tree_payload["success"] is True
+    assert create_response.curriculumCreationJobId in tree_payload["jobIds"]
+    assert create_response.catalogRefreshJobId in tree_payload["jobIds"]
+    assert len(tree_payload["results"]) >= 2
