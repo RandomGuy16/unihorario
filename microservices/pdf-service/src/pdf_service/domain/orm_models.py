@@ -281,7 +281,7 @@ class CatalogCareerORM(Base, TimestampMixin):
     __tablename__ = "catalog_careers"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    career_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    career_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=False, index=True)
     faculty: Mapped[str] = mapped_column(String(128), nullable=False)
     career: Mapped[str] = mapped_column(String(128), nullable=False)
 

@@ -1,6 +1,6 @@
 import pytest
 
-from pdf_service.domain.models import AwaitJobResponse, CreateCurriculumResponse, UniversityCurriculum
+from pdf_service.domain.models import AwaitJobResponse, CreateCurriculumResponse, UniversityCurriculum, Catalog
 
 
 @pytest.mark.asyncio
@@ -48,3 +48,22 @@ async def test_e2e_await_tree_returns_parse_and_refresh_jobs(client, pdf_bytes):
     assert create_response.curriculumCreationJobId in tree_payload["jobIds"]
     assert create_response.catalogRefreshJobId in tree_payload["jobIds"]
     assert len(tree_payload["results"]) >= 2
+
+@pytest.mark.asyncio
+async def test_e2e_await_job_returns_updated_catalog(client, pdf_bytes):
+    files = {
+        "file": ("Programacion_Asignaturas.pdf", pdf_bytes, "application/pdf")
+    }
+
+    post_res = await client.post("/api/curriculum", files=files)
+    assert post_res.status_code == 200
+    create_response = CreateCurriculumResponse(**post_res.json())
+
+    catalog_job_id = create_response.catalogRefreshJobId
+    catalog_res = await client.get(f"/api/jobs/await_job/{catalog_job_id}")
+    assert catalog_res.status_code == 200
+    catalog_payload = AwaitJobResponse(**catalog_res.json())
+    assert catalog_payload.success is True
+    assert catalog_payload.result is not None
+    catalog = Catalog.model_validate(catalog_payload.result)
+    assert create_response.metadata.school in catalog.careers

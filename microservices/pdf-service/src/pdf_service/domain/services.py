@@ -11,7 +11,8 @@ from pdf_service.core.logger import logger
 from pdf_service.domain.exceptions import CurriculumNotFoundError
 from pdf_service.domain.models import UniversityCurriculum, Catalog, CreateCurriculumResponse, CareerCurriculum, \
     CareerCurriculumMetadata, CatalogCareerData
-from pdf_service.domain.data_transform import parse_pdf_sync, get_file_metadata
+from pdf_service.domain.data_transform import parse_pdf_sync, get_file_metadata, \
+    create_catalog_from_university_curriculum
 import uuid
 
 from pdf_service.domain.uow import UnitOfWork
@@ -366,6 +367,7 @@ class CatalogService:
         :return: The updated Catalog object.
         """
         async with self.uow_factory() as uow:
+            await self.build_catalog()
             self.data = await uow.catalogs.get()
         return self.data
 
@@ -376,6 +378,19 @@ class CatalogService:
         :return: The unique identifier for the refresh job.
         """
         return self.jobs.submit("refresh_catalog", self.refresh_catalog())
+
+    async def build_catalog(self):
+        """
+            Creates the catalog orm objects with the year entities.
+
+            :return: Nothing.
+        """
+        async with self.uow_factory() as uow:
+            curriculum = await uow.curriculums.get()
+            catalog = create_catalog_from_university_curriculum(curriculum)
+            for _, career in catalog.careers.items():
+                await uow.catalogs.save(career)
+
 
     def has_career(self, career: str):
         """

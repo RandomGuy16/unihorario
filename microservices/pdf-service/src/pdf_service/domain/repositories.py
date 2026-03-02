@@ -72,6 +72,11 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
         year_entities = university_curriculum_to_orm(university_curriculum)
         self.session.add_all(year_entities)
 
+    async def get(self) -> UniversityCurriculum | None:
+        """Fetch curriculum aggregate."""
+        curriculum = university_curriculum_from_orm((await self.session.scalars(_year_tree_stmt())))
+        return curriculum
+
     async def get_by_school(self, school: str) -> UniversityCurriculum | None:
         """Fetch curriculum aggregate by school key.
 
