@@ -32,7 +32,7 @@ def _write_catalog(json_path: path.Path, catalog: Catalog):
         json.dump(catalog.model_dump(), catalog_file, indent=4, ensure_ascii=False)
 
 
-def create_catalog():
+def create_catalog_from_university_curriculum(curriculum: UniversityCurriculum):
     """Build a catalog index from all stored career JSON files.
 
     Scans the careers directory, loads each curriculum JSON, and aggregates
@@ -44,25 +44,32 @@ def create_catalog():
     """
     # initialize catalog
     catalog: Catalog = Catalog(careers={})
-    # iterate over all json in careers folder
-    for file in CAREERS_DIR_PATH.glob("*.json"):
-        # object that represents each career
-        career_data = CatalogCareerData(studyPlans=[], cycles=[], faculty="", career="")
-        with open(file, "r") as f:
-            # extract the data and get metadata
-            data: UniversityCurriculum = UniversityCurriculum.model_validate(json.load(f))
-            for year in data.years:
-                for career in year.careerCurriculums:
-                    # Use metadata as the catalog source of truth.
-                    career_data.career    = career.metadata.school
-                    career_data.faculty   = career.metadata.faculty
-                    career_data.studyPlans.append(career.metadata.studyPlan)
-                    for cycle in career.cycles:
-                        career_data.cycles.append(cycle.cycle)
-        # add metadata to the catalog
-        catalog.careers[file.stem] = career_data
 
-    _write_catalog(Path(CATALOG_DIR_PATH, 'catalog.json'), catalog)
+    for year in curriculum.years:
+        for career in year.careerCurriculums:
+            # Use metadata as the catalog source of truth.
+            career_name = career.metadata.school
+            study_plan = career.metadata.studyPlan
+            cycles = [cycle.cycle for cycle in career.cycles]
+
+            if career_name not in catalog.careers:
+                catalog.careers[career_name] = CatalogCareerData(
+                    studyPlans=[],
+                    cycles=[],
+                    faculty=career.metadata.faculty,
+                    career=career.metadata.school
+                )
+
+            entry = catalog.careers[career_name]
+            # entry.studyPlans is a list, but that list barely contains more than 3 items
+            # so O(1)
+            if study_plan not in entry.studyPlans:
+                entry.studyPlans.append(study_plan)
+            # same for cycles, upper limit is 10 - 12, so O(1)
+            for cycle_name in cycles:
+                if cycle_name not in entry.cycles:
+                    entry.cycles.append(cycle_name)
+
     return catalog
 
 
@@ -242,12 +249,10 @@ def _parser_handle_row(row: List[str], course_section: CourseSection, curr_cycle
     ))
 
 def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
-    """Parse a PDF into a UniversityCurriculum and persist it to disk.
+    """Parse a PDF into a UniversityCurriculum without persistence side effects.
 
-    This routine extracts metadata, groups tables by cycle, builds the
-    curriculum data model, and writes the resulting JSON file. If a
-    curriculum for the same school already exists, it will append prior
-    years to preserve history.
+    This routine extracts metadata, groups tables by cycle, and builds the
+    curriculum data model. Persistence is handled by repositories/services.
 
     :param pdf_file: PDF file path or stream.
     :type pdf_file: pathlib.Path | BinaryIO
@@ -275,16 +280,7 @@ def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
 
             out.years[-1].careerCurriculums[-1].cycles.append(curr_cycle)
 
-        career_data_path = path.Path(CAREERS_DIR_PATH, f"{metadata.school}.json")
-        if career_data_path.exists():
-            # Preserve historical years if a file already exists for this school.
-            prev_career_data = read_career(metadata.school)
-            if out.years[0] not in [*prev_career_data.years]:
-                out.years.extend(prev_career_data.years)
-
-        # debug here
-    # Persist the resulting curriculum to disk.
-    _write_json(career_data_path, out)
+    # parser is intentionally pure and returns the value to be persisted by the DB layer
     return out
 
 

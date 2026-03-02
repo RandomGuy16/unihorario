@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from src.pdf_service.domain.services import JobManager, JobStatus
+from pdf_service.domain.services import JobManager, JobStatus
 
 @pytest.mark.asyncio
 async def test_job_submission():
@@ -85,5 +85,5 @@ async def test_await_tree():
     
     results_dict = dict(results)
     assert results_dict[root_id] == "root"
-    assert results_dict[child1_id] == "child1"
-    assert results_dict[child2_id] == "child2"
+    assert results_dict[child1_id] == "child_1"
+    assert results_dict[child2_id] == "child_2"

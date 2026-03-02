@@ -9,6 +9,7 @@ engine: AsyncEngine = create_async_engine(
     pool_pre_ping=True,
 )
 
+# the session with the database
 SessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
 async def get_db():

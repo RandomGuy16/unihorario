@@ -21,5 +21,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 COPY . .
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
-
+CMD ["sh", "-c", "uvicorn pdf_service.main:app --app-dir src --host 0.0.0.0 --port ${PORT:-8080}"]

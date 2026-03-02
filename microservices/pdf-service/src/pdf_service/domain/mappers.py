@@ -225,6 +225,27 @@ def schedule_from_orm(section_orm: CourseSectionORM, schedule_orm: ScheduleORM) 
     )
 
 
+def catalog_career_data_to_orm(career_data: CatalogCareerData, career_key: str) -> CatalogCareerORM:
+    """Map domain career data to ORM entity."""
+    orm_obj = CatalogCareerORM(
+        career_key=career_key,
+        faculty=career_data.faculty,
+        career=career_data.career,
+    )
+    orm_obj.study_plans = [CatalogStudyPlanORM(study_plan=p) for p in career_data.studyPlans]
+    orm_obj.cycles = [CatalogCycleORM(cycle_name=c) for c in career_data.cycles]
+    return orm_obj
+
+
+def catalog_career_data_from_orm(catalog_career: CatalogCareerORM) -> CatalogCareerData:
+    return CatalogCareerData(
+        career=catalog_career.career,
+        faculty=catalog_career.faculty,
+        studyPlans=[plan.study_plan for plan in catalog_career.study_plans],
+        cycles=[cycle.cycle_name for cycle in catalog_career.cycles]
+    )
+
+
 def catalog_to_orm(catalog: Catalog) -> list[CatalogCareerORM]:
     """Map domain catalog to ORM entities.
 
@@ -235,13 +256,7 @@ def catalog_to_orm(catalog: Catalog) -> list[CatalogCareerORM]:
     """
     entries: list[CatalogCareerORM] = []
     for career_key, career_data in catalog.careers.items():
-        entry = CatalogCareerORM(
-            career_key=career_key,
-            faculty=career_data.faculty,
-            career=career_data.career,
-        )
-        entry.study_plans = [CatalogStudyPlanORM(study_plan=p) for p in career_data.studyPlans]
-        entry.cycles = [CatalogCycleORM(cycle_name=c) for c in career_data.cycles]
+        entry = catalog_career_data_to_orm(career_data, career_key)
         entries.append(entry)
     return entries
 

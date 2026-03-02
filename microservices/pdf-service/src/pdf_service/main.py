@@ -1,28 +1,41 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from pdf_service.domain.exceptions import CurriculumNotFoundError
 from pdf_service.domain.models import AwaitJobResponse, AwaitTreeResponse
 from pdf_service.domain.services import CatalogService, CurriculumService, JobManager
 from pdf_service.core.logger import logger
 from contextlib import asynccontextmanager
-from pdf_service.domain.db import engine
+from pdf_service.domain.db import engine, SessionLocal
+from pdf_service.domain.uow import UnitOfWork
 
 
-job_manager        = JobManager()
-catalog_service    = CatalogService(jobs=job_manager)
-curriculum_service = CurriculumService(catalog_service, jobs=job_manager)
+def uow_factory() -> UnitOfWork:
+    return UnitOfWork(SessionLocal)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # instead of loading an ML model
-    # we'll initialize the catalog service
-    await catalog_service.init()
-
     # now initialize the connection with the database
     async with engine.begin() as conn:
         await conn.run_sync(lambda _: None)
-    
+
+    # define state for some services
+    app.state.job_manager = JobManager()
+    app.state.catalog_service = CatalogService(
+        jobs=app.state.job_manager,
+        uow_factory=uow_factory
+    )
+    app.state.curriculum_service = CurriculumService(
+        app.state.catalog_service,
+        jobs=app.state.job_manager,
+        uow_factory=uow_factory
+    )
+
+    # instead of loading an ML model
+    # we'll initialize the catalog service
+    await app.state.catalog_service.init()
+
     # before startup
     yield
     # on shutdown
@@ -47,15 +60,15 @@ async def main():
 
 @app.get("/api/catalog")
 async def get_catalog():
-    return catalog_service.get_catalog()
+    return await app.state.catalog_service.get_catalog()
 
 
 @app.get("/api/curriculum")
 async def get_career_curriculum(school: str=''):
     try:
-        return await curriculum_service.get_curriculum(school=school)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=f"File not found: {str(e)}")
+        return await app.state.curriculum_service.get_curriculum(school=school)
+    except CurriculumNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -63,7 +76,7 @@ async def get_career_curriculum(school: str=''):
 async def post_career_curriculum(file: UploadFile = File(...)):
     try:
         logger.info(f"Received pdf upload")
-        return await curriculum_service.receive_curriculum(file.file)
+        return await app.state.curriculum_service.receive_curriculum(file.file)
     except IndexError:
         raise HTTPException(
             status_code=400,
@@ -77,7 +90,7 @@ async def await_job(job_id: str):
     try:
         logger.info(f"Awaiting job {job_id}")
         # result = await job_manager.await_job(job_id)
-        result = await curriculum_service.jobs.await_job(job_id)
+        result = await app.state.curriculum_service.jobs.await_job(job_id)
         return AwaitJobResponse(
             success=True,
             result=result
@@ -91,7 +104,7 @@ async def await_job(job_id: str):
 async def await_tree(job_id: str):
     try:
         logger.info(f"Awaiting tree, root: {job_id}")
-        results = await job_manager.await_tree(job_id)
+        results = await app.state.job_manager.await_tree(job_id)
         return AwaitTreeResponse(
             success=True,
             results=[result[1] for result in results],

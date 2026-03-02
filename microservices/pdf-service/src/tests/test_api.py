@@ -1,14 +1,6 @@
 import pytest
-import pytest_asyncio
 import asyncio
-from httpx import ASGITransport, AsyncClient
 from pdf_service.main import app
-
-@pytest_asyncio.fixture
-async def client():
-    # Use ASGITransport for testing FastAPI app
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
 
 @pytest.mark.asyncio
 async def test_helloworld(client):
@@ -28,13 +20,12 @@ async def test_get_catalog(client):
 async def test_await_job_endpoint(client):
     # We can't easily submit a job via API without a PDF, 
     # but we can submit one directly via job_manager and then await it via API.
-    from pdf_service.main import job_manager
     
     async def quick_job():
         await asyncio.sleep(0.1)
         return {"status": "done"}
     
-    job_id = job_manager.submit("test_api_job", quick_job())
+    job_id = app.state.job_manager.submit("test_api_job", quick_job())
     
     response = await client.get(f"/api/jobs/await_job/{job_id}")
     assert response.status_code == 200
@@ -49,16 +40,15 @@ async def test_await_job_not_found(client):
 
 @pytest.mark.asyncio
 async def test_await_tree_endpoint(client):
-    from pdf_service.main import job_manager
-    
+
     async def root_job():
         return "root_val"
     
     async def child_job():
         return "child_val"
     
-    root_id = job_manager.submit("root", root_job())
-    child_id = job_manager.submit_child(root_id, "child", child_job())
+    root_id = app.state.job_manager.submit("root", root_job())
+    child_id = app.state.job_manager.submit_child(root_id, "child", child_job())
     
     response = await client.get(f"/api/jobs/await_tree/{root_id}")
     assert response.status_code == 200

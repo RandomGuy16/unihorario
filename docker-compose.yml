@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   # servicio 1: la base de datos
@@ -13,21 +13,28 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   # microservicio: pdf-service
   pdf-service:
     build:
       context: ./microservices/pdf-service
       dockerfile: Dockerfile
-    command: uvicorn main:app --host 0.0.0.0 --port 8080 --reload
     ports:
       - "8080:8080"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
-      - .env
+      - ./microservices/pdf-service/.env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/app
+      - PORT=8080
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
+    command: sh -c "alembic upgrade head && uvicorn pdf_service.main:app --app-dir src --host 0.0.0.0 --port ${PORT:-8080}"
 
 volumes:
   postgres_data:

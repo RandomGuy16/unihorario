@@ -48,7 +48,7 @@ class YearORM(Base, TimestampMixin):
     __tablename__ = "years"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    year: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    year: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
 
     # relationship tells sqlalchemy that this has many CareerCurriculumORM
     # and that when this gets deleted, delete its children that are now orphaned
@@ -266,7 +266,7 @@ class CatalogCareerORM(Base, TimestampMixin):
 
     :ivar id: Primary key UUID.
     :vartype id: uuid.UUID
-    :ivar career_key: Unique key used in catalog dictionaries.
+    :ivar career_key: Unique key used in catalog dictionaries (the career name).
     :vartype career_key: str
     :ivar faculty: Faculty label.
     :vartype faculty: str
@@ -281,7 +281,7 @@ class CatalogCareerORM(Base, TimestampMixin):
     __tablename__ = "catalog_careers"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    career_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    career_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=False, index=True)
     faculty: Mapped[str] = mapped_column(String(128), nullable=False)
     career: Mapped[str] = mapped_column(String(128), nullable=False)
 
