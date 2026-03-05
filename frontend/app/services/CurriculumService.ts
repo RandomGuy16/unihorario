@@ -12,7 +12,7 @@ export const CurriculumService = {
   async fetchCurriculum(school: string): Promise<UniversityCurriculum> {
     const params = new URLSearchParams()
     params.append('school', school)
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+    const baseUrl = process.env.API_BASE_URL || "http://localhost:8080"
     const response = await fetch(`${baseUrl}/api/curriculum?${params}`)
     // wait for the response
     if (!response.ok) {
