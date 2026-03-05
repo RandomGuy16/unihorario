@@ -31,7 +31,7 @@ PDF_DIR = os.getenv("PDF_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to
 TESTS_DIR = os.getenv("TESTS_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="TESTS_DIR") or "tests"
 DATABASE_URL = os.getenv("DATABASE_URL") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="DATABASE_URL")
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
+    DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/app"
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
