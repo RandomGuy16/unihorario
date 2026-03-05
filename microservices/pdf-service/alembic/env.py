@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from pdf_service.domain.orm_models import Base
+from pdf_service.core.config import DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,7 +18,7 @@ load_dotenv()
 
 config = context.config
 
-database_url = os.getenv("DATABASE_URL")
+database_url = DATABASE_URL
 if not database_url:
     raise RuntimeError("DATABASE_URL is not set for Alembic migrations.")
 
