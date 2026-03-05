@@ -202,9 +202,9 @@ class SqlCatalogRepository(CatalogRepository):
             select(CatalogCareerORM)
             .where(CatalogCareerORM.career_key == catalog_career.career)
         )
-
-        old = (await self.session.execute(stmt)).scalar_one_or_none()
-        if old:
+        # instead of assuming a unique row selected, we get many
+        previous_rows = (await self.session.scalars(stmt)).all()
+        for old in previous_rows:  # and delete many already existing rows
             await self.session.delete(old)
 
         orm_obj = catalog_career_data_to_orm(catalog_career, career_key=catalog_career.career)

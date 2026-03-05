@@ -54,5 +54,12 @@ async def session(engine):
 @pytest_asyncio.fixture
 async def pdf_bytes():
     """Load sample curriculum PDF fixture bytes."""
-    fixture_path = Path(__file__).resolve().parent / "fixtures" / "Programacion_Asignaturas.pdf"
+    fixture_path = Path(__file__).resolve().parent / "fixtures" / "ingenieria_sistemas.pdf"
     return fixture_path.read_bytes()
+
+# helper to send multipart just by passing pdf name no extension here
+def get_pdf_multipart_data(pdf_name: str):
+    fixture_path = Path(__file__).resolve().parent / "fixtures" / f"{pdf_name}.pdf"
+    return {
+        "file": (f"{pdf_name}.pdf", fixture_path.read_bytes(), "application/pdf")
+    }
