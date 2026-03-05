@@ -8,7 +8,7 @@ PACKAGE_DIR = Path(__file__).resolve().parents[1]
 def find_project_root(start: Path) -> Path:
     """Walk up until we find pyproject.toml"""
     for p in (start, *start.parents):
-        if (p / "pyproject.toml").exists():
+        if (p / "pyproject.toml").exists() or (p / "requirements.txt").exists():
             return p
 
     return start
@@ -31,9 +31,20 @@ PDF_DIR = os.getenv("PDF_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to
 TESTS_DIR = os.getenv("TESTS_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="TESTS_DIR") or "tests"
 DATABASE_URL = os.getenv("DATABASE_URL") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="DATABASE_URL")
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/postgres"
+    DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/app"
+
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+#
+# if DATABASE_URL.startswith("postgresql://"):
+#     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 CAREERS_DIR_PATH = Path.joinpath(PROJECT_ROOT, CAREERS_DIR)
 CATALOG_DIR_PATH = Path.joinpath(PROJECT_ROOT, CATALOG_DIR)
 PDF_DIR_PATH = Path.joinpath(PROJECT_ROOT, PDF_DIR)
 TESTS_DIR_PATH = Path.joinpath(SRC_DIR, TESTS_DIR)
+PORT = int(os.getenv("PORT", 8080))
+
+CORS_ORIGINS = [
+    origin.strip() for origin in (os.getenv("CORS_ORIGINS", "")).split(",") if origin.strip()
+]
