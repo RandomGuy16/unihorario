@@ -180,6 +180,13 @@ class JobManager:
 
         def _enqueue_child(task: asyncio.Task) -> None:
             child_info = self.get_info(child_job_id)
+            # helper to log a parent job failure and elevate it
+            async def _raise_parent_failure(parent_error: BaseException):
+                raise RuntimeError(
+                    f"Parent job {parent_job_id} failed; child job {child_job_id} not started: "
+                    f"{type(parent_error).__name__}: {parent_error}"
+                )
+
             try:
                 task.result()  # this will raise if the parent failed
                 self._start_reserved(child_job_id, coro_factory())
@@ -189,8 +196,15 @@ class JobManager:
                     child_info.status = JobStatus.CANCELLED
                     child_info.error = f"ParentFailed({type(e).__name__}): {e}"
                     child_info.finished_at = datetime.now(timezone.utc)
+                self._start_reserved(child_job_id, _raise_parent_failure(e))
                 logger.exception("Error occurred during parent job execution: child job not started")
-            except Exception:
+            except Exception as e:
+                # if in any case the parent job doesnt get cancelled and fails naturally
+                # set the info to the children and elevate the error
+                if child_info:
+                    child_info.error = f"ParentFailed({type(e).__name__}): {e}"
+                    child_info.finished_at = datetime.now(timezone.utc)
+                self._start_reserved(child_job_id, _raise_parent_failure(e))
                 logger.exception("Error occurred during child job execution")
                 # logger.exception(f"{e.__class__.__name__}: {e}")
         parent_job.add_done_callback(_enqueue_child)

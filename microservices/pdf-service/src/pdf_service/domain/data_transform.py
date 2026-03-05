@@ -1,6 +1,5 @@
 import json
 import pathlib as path
-from pathlib import Path
 import pdfplumber
 import os
 from pdf_service.core.config import PDF_DIR_PATH, CAREERS_DIR_PATH, CATALOG_DIR_PATH
@@ -146,16 +145,20 @@ def _parser_bundle_tables(pdf_file: pdfplumber.PDF):
     :rtype: list[list[list[str | None]]]
     """
     full_tables: List[List[List[str | None]]] = []
+    last_table : List[List[str | None]]       = []
 
     for page in pdf_file.pages:
         for table in page.extract_tables():
             table = _parser_clean_table(table)
             if table[0] == ['Asignatura', 'Créd.', 'Sec.', 'Docente', 'Tope', 'Matri.', 'Aula', 'Día', 'Horas Clase']:
                 # New table header means a new cycle starts here.
+                # last table reference helps avoid problems
+                last_table = table
                 full_tables.append(table)
             else:
                 # Continuation of the previous cycle table.
-                full_tables[-1].extend(table)
+                # full_tables[-1].extend(table)  to avoid the kind of problems this line used to generate
+                last_table.extend(table)
 
     return full_tables
 

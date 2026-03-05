@@ -87,3 +87,26 @@ async def test_await_tree():
     assert results_dict[root_id] == "root"
     assert results_dict[child1_id] == "child_1"
     assert results_dict[child2_id] == "child_2"
+
+
+@pytest.mark.asyncio
+async def test_then_parent_failure_propagates_to_child():
+    jm = JobManager()
+
+    async def parent_job():
+        raise ValueError("boom")
+
+    def child_job_factory():
+        async def child_job():
+            return "unreachable"
+        return child_job()
+
+    parent_id = jm.submit("parent", parent_job())
+    child_id = jm.then(parent_id, "child", child_job_factory)
+
+    with pytest.raises(ValueError, match="boom"):
+        await jm.await_job(parent_id)
+
+    # Child should not hang forever when parent fails.
+    with pytest.raises(RuntimeError, match="Parent job"):
+        await asyncio.wait_for(jm.await_job(child_id), timeout=1.0)
