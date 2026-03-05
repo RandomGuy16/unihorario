@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from pdf_service.core.config import CORS_ORIGINS
 from pdf_service.domain.exceptions import CurriculumNotFoundError
 from pdf_service.domain.models import AwaitJobResponse, AwaitTreeResponse
 from pdf_service.domain.services import CatalogService, CurriculumService, JobManager
@@ -42,7 +43,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-origins=["*"]
+origins = CORS_ORIGINS or ["http://localhost:3000"]
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,

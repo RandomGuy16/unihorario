@@ -26,6 +26,7 @@ class UniversityCurriculumRepository(Protocol):
     """Contract for UniversityCurriculum aggregate persistence."""
 
     async def save(self, university_curriculum: UniversityCurriculum) -> None: ...
+    async def get(self) -> UniversityCurriculum | None: ...
     async def get_by_school(self, school: str) -> UniversityCurriculum | None: ...
     async def get_by_school_and_year(self, school: str, year: str) -> UniversityCurriculum | None: ...
     async def list_years_for_school(self, school: str) -> list[str]: ...
@@ -74,7 +75,8 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
 
     async def get(self) -> UniversityCurriculum | None:
         """Fetch curriculum aggregate."""
-        curriculum = university_curriculum_from_orm((await self.session.scalars(_year_tree_stmt())))
+        row = (await self.session.scalars(_year_tree_stmt())).unique().all()
+        curriculum = university_curriculum_from_orm(row)
         return curriculum
 
     async def get_by_school(self, school: str) -> UniversityCurriculum | None:
