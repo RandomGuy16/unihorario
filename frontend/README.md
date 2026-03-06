@@ -55,3 +55,20 @@ pnpm lint
 
 - Upload and parsing status depend on backend jobs (`/api/jobs/*` endpoints).
 - Keep UI behavior aligned with backend constraints for section schedules and metadata.
+
+## Demo Flow (Template)
+
+Use this section to document the product "golden path" with screenshots.
+
+1. Select career, cycle, and study plan from sidebar filters.
+   ![Step 1 - Filters](../docs/images/demo-step-1-filters.png)
+2. Add course sections to the schedule grid.
+   ![Step 2 - Add sections](../docs/images/demo-step-2-add-sections.png)
+3. Resolve overlap constraints and verify final schedule.
+   ![Step 3 - Resolve conflicts](../docs/images/demo-step-3-conflicts.png)
+4. Export the generated schedule.
+   ![Step 4 - Export](../docs/images/demo-step-4-export.png)
+5. Optional: upload assignment programming PDF to refresh data.
+   ![Step 5 - Upload PDF](../docs/images/demo-step-5-upload-pdf.png)
+
+Store screenshots under `docs/images/` in the repository root.

@@ -19,6 +19,20 @@ The platform also supports uploading an official assignment programming PDF (the
 3. User exports the generated schedule.
 4. User can upload an official assignment programming PDF to refresh or add curriculum data.
 
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    U[Student User] --> FE[Frontend Next.js]
+    FE -->|REST API| PDF[PDF Service FastAPI]
+    FE -->|Future BFF| GW[Gateway NestJS Future]
+    PDF --> DB[(PostgreSQL)]
+    U -->|Upload Assignment Programming PDF| FE
+    FE -->|POST /api/curriculum| PDF
+    PDF -->|Background Jobs parse and refresh| PDF
+    PDF -->|GET /api/catalog and /api/curriculum| FE
+```
+
 ## Local Development
 
 From repository root:
@@ -69,3 +83,4 @@ cd microservices/pdf-service && uv run pytest -q src/tests/test_parsing_logic.py
 - Frontend guide: `frontend/README.md`
 - Gateway guide: `gateway/README.md`
 - PDF service guide: `microservices/pdf-service/README.md`
+- Demo screenshot folder: `docs/images/`

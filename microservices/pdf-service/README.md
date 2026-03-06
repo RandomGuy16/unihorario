@@ -19,6 +19,54 @@ FastAPI microservice that parses official assignment-programming PDFs and stores
 - `GET /api/jobs/await_job/{job_id}`
 - `GET /api/jobs/await_tree/{job_id}`
 
+## API Examples (curl)
+
+Set base URL:
+
+```bash
+API_BASE_URL=http://localhost:8080
+```
+
+Health check:
+
+```bash
+curl -s "$API_BASE_URL/helloworld"
+```
+
+Get catalog:
+
+```bash
+curl -s "$API_BASE_URL/api/catalog"
+```
+
+Get curriculum by school:
+
+```bash
+curl -sG "$API_BASE_URL/api/curriculum" \
+  --data-urlencode "school=1 - E.P. De Ingeniería De Sistemas"
+```
+
+Upload official assignment programming PDF:
+
+```bash
+curl -s -X POST "$API_BASE_URL/api/curriculum" \
+  -F "file=@src/tests/fixtures/ingenieria_sistemas.pdf"
+```
+
+Await parse/catalog job result:
+
+```bash
+JOB_ID="<paste_job_id_here>"
+curl -s "$API_BASE_URL/api/jobs/await_job/$JOB_ID"
+```
+
+Await full job tree:
+
+```bash
+ROOT_JOB_ID="<paste_root_job_id_here>"
+curl -s "$API_BASE_URL/api/jobs/await_tree/$ROOT_JOB_ID"
+```
+
 ## Local Run
 
 From repository root:
@@ -47,6 +95,10 @@ Focused suites:
 uv run pytest -q src/tests/test_parsing_logic.py -vv
 uv run pytest -q src/tests/test_e2e_api_db_flow.py -vv -s
 ```
+
+Detailed test documentation:
+
+- `src/tests/README.md`
 
 ## Environment
 
