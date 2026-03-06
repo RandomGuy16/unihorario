@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Unihorario Frontend
 
-## Getting Started
+Frontend for building university schedules from official course sections.
 
-First, run the development server:
+## What This App Does
+
+- Shows available courses/sections grouped by career, cycle, and study plan.
+- Lets users add valid sections into a weekly calendar grid.
+- Prevents arbitrary schedule creation by using only faculty-defined section shifts.
+- Supports uploading assignment programming PDFs through the backend flow.
+- Supports schedule export.
+
+## Tech Stack
+
+- Next.js (App Router)
+- React + TypeScript
+- `pnpm` package manager
+
+## Run Locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App URL: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Required Environment Variable
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `frontend/.env.local`:
 
-## Learn More
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+```
 
-To learn more about Next.js, take a look at the following resources:
+Point this URL to your deployed backend in non-local environments.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Common Commands
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+pnpm build
+pnpm start
+pnpm lint
+```
 
-## Deploy on Vercel
+## Project Structure (high level)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `app/components/`: UI components (sidebar, schedule, modals).
+- `app/providers/`: state and context providers.
+- `app/services/`: API client modules (`CatalogService`, `CurriculumService`).
+- `app/models/`: shared frontend domain models and DTOs.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+
+- Upload and parsing status depend on backend jobs (`/api/jobs/*` endpoints).
+- Keep UI behavior aligned with backend constraints for section schedules and metadata.
