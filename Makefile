@@ -32,10 +32,16 @@ fe-build:
 be-install:
 	cd microservices/pdf-service && uv sync
 
-be-dev:
-	cd microservices/pdf-service && uv run uvicorn pdf_service.main:app --app-dir src --reload
-
+be-dev: db-up
+	sleep 3
+	cd microservices/pdf-service && uv run alembic upgrade head
+	cd microservices/pdf-service && uv run uvicorn pdf_service.main:app --app-dir src --reload --port 8080
+	# cd microservices/pdf-service && uv run uvicorn pdf_service.main:app --app-dir src --reload --port 8080
+	# uv run alembic upgrade head && uv run alembic current
+	
 be-test: be-test-db-init
+	sleep 3
+	cd microservices/pdf-service && uv run alembic upgrade head
 	cd microservices/pdf-service && TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/unihorario_test uv run pytest
 
 be-test-db-init:

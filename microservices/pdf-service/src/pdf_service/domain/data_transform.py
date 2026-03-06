@@ -146,11 +146,15 @@ def _parser_bundle_tables(pdf_file: pdfplumber.PDF):
     """
     full_tables: List[List[List[str | None]]] = []
     last_table : List[List[str | None]]       = []
+    TABLE_HEADERS = {
+        ('Asignatura', 'Créd.', 'Sec.', 'Docente', 'Tope', 'Matri.', 'Aula', 'Día', 'Horas Clase'),
+        ('Asignatura', 'Créd.', 'Grupo', 'Docente', 'Tope', 'Matri.', 'Aula', 'Día', 'Horas Clase'),
+    }
 
     for page in pdf_file.pages:
         for table in page.extract_tables():
             table = _parser_clean_table(table)
-            if table[0] == ['Asignatura', 'Créd.', 'Sec.', 'Docente', 'Tope', 'Matri.', 'Aula', 'Día', 'Horas Clase']:
+            if tuple(table[0]) in TABLE_HEADERS:
                 # New table header means a new cycle starts here.
                 # last table reference helps avoid problems
                 last_table = table
