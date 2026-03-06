@@ -206,6 +206,9 @@ class SqlCatalogRepository(CatalogRepository):
         previous_rows = (await self.session.scalars(stmt)).all()
         for old in previous_rows:  # and delete many already existing rows
             await self.session.delete(old)
+        if previous_rows:
+            # Ensure DELETEs hit the DB before INSERT under the unique index.
+            await self.session.flush()
 
         orm_obj = catalog_career_data_to_orm(catalog_career, career_key=catalog_career.career)
         self.session.add(orm_obj)

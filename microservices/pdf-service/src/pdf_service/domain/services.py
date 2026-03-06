@@ -10,7 +10,7 @@ from pydantic.v1 import BaseModel, Field
 from pdf_service.core.logger import logger
 from pdf_service.domain.exceptions import CurriculumNotFoundError
 from pdf_service.domain.models import UniversityCurriculum, Catalog, CreateCurriculumResponse, CareerCurriculum, \
-    CareerCurriculumMetadata, CatalogCareerData
+    CatalogCareerData
 from pdf_service.domain.data_transform import parse_pdf_sync, get_file_metadata, \
     create_catalog_from_university_curriculum
 import uuid
@@ -331,6 +331,9 @@ class CatalogService:
         self.data: Catalog = Catalog(careers={})
         self.jobs          = jobs
         self.uow_factory   = uow_factory
+        # Multiple parse jobs can trigger catalog refresh concurrently.
+        # Serialize refreshes to avoid unique-key races on catalog upserts.
+        self._refresh_lock = asyncio.Lock()
 
     async def init(self):
         """
@@ -380,9 +383,10 @@ class CatalogService:
 
         :return: The updated Catalog object.
         """
-        async with self.uow_factory() as uow:
-            await self.build_catalog()
-            self.data = await uow.catalogs.get()
+        async with self._refresh_lock:
+            async with self.uow_factory() as uow:
+                await self.build_catalog()
+                self.data = await uow.catalogs.get()
         return self.data
 
     def refresh_catalog_in_background(self) -> str:
