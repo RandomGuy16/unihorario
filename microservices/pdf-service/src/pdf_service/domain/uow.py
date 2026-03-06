@@ -32,6 +32,20 @@ from pdf_service.domain.repositories import (
 #    await repos.curriculums.save(curriculum)
 
 class UnitOfWork:
+    """Transaction boundary that exposes repository instances per session.
+
+    The unit of work opens one async SQLAlchemy session, provides typed
+    repositories bound to that session, and commits or rolls back on exit.
+
+    :ivar session: Active async database session.
+    :vartype session: AsyncSession
+    :ivar curriculums: Repository for university curriculum aggregates.
+    :vartype curriculums: UniversityCurriculumRepository
+    :ivar catalogs: Repository for catalog persistence.
+    :vartype catalogs: CatalogRepository
+    :ivar career_curriculums: Repository for career-level curriculum entities.
+    :vartype career_curriculums: CareerCurriculumRepository
+    """
     session: AsyncSession
     curriculums: UniversityCurriculumRepository
     catalogs: CatalogRepository

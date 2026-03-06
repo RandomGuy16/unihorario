@@ -238,6 +238,13 @@ def catalog_career_data_to_orm(career_data: CatalogCareerData, career_key: str) 
 
 
 def catalog_career_data_from_orm(catalog_career: CatalogCareerORM) -> CatalogCareerData:
+    """Map one catalog ORM entity into domain-level catalog career data.
+
+    :param catalog_career: ORM catalog career entity with related plans/cycles.
+    :type catalog_career: CatalogCareerORM
+    :return: Domain catalog career data object.
+    :rtype: CatalogCareerData
+    """
     return CatalogCareerData(
         career=catalog_career.career,
         faculty=catalog_career.faculty,
@@ -278,4 +285,3 @@ def catalog_from_orm(career_entities: list[CatalogCareerORM]) -> Catalog:
             career=entity.career,
         )
     return Catalog(careers=careers)
-
