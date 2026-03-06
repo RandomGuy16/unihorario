@@ -1,31 +1,88 @@
 # Unihorario
 
-Personal project to explore scheduling tools for university courses. The focus right now is a Next.js frontend and a PDF parsing microservice that can extract catalog data; the gateway/API layer will be added later.
+Unihorario helps university students build class schedules faster.
 
-## Project Layout
-- `frontend/`: Next.js app router scaffold. UI work happens here (entry under `app/`).
-- `microservices/pdf-service/`: FastAPI service to parse curriculum PDFs and surface catalog data. Helpers live in `src/`, fixtures in `pdf/` and `json/`.
+The web app exposes available courses and sections by career, cycle, and study plan. Students pick sections from a sidebar and place them into a weekly calendar grid based on real section shifts (faculty-defined times, not arbitrary custom time slots). The resulting schedule can be exported.
 
-## Getting Started
-### Frontend (Next.js)
-1) `cd frontend`
-2) Install: `pnpm install`
-3) Develop: `pnpm dev` (http://localhost:3000)
-4) Lint: `pnpm lint`
+The platform also supports uploading an official assignment programming PDF (the academic-period document with courses/sections) so the backend can parse and register curriculum/catalog data.
 
-### PDF Service (FastAPI)
-1) `cd microservices/pdf-service`
-2) Install deps: `uv sync` or `pip install -r requirements.txt`
-3) Run dev server: `uvicorn main:app --reload` (default http://127.0.0.1:8000)
-4) Try sample endpoints: `/helloworld`, `/api/catalog`, `/api/curriculum?school=<name>`
+🌐 Live Demo: `https://unihorario.vercel.app`
 
-## Notes & Conventions
-- Use `pnpm` for the frontend; Python 3.13+ for the service.
-- Keep secrets in local `.env` files; do not commit `.env`, `.venv/`, or generated artifacts.
-- TypeScript style: camelCase for values, PascalCase for components/classes, kebab-case filenames. Python: PEP 8 with 4-space indents.
-- Tests: Jest planned for the frontend; none yet. For the PDF service, add unit tests around parsers and keep fixtures deterministic.
+## Monorepo Structure
 
-## Roadmap (short term)
-- Replace the default Next.js landing page with schedule-focused screens.
-- Solidify PDF parsing workflows and shape responses for the future API layer.
-- Add component/feature tests and minimal e2e checks before wiring a gateway.
+- `frontend/`: Next.js app used by students to browse sections and build schedules.
+- `gateway/`: NestJS API gateway (BFF/orchestration layer, currently minimal).
+- `microservices/pdf-service/`: FastAPI microservice that parses uploaded curriculum PDFs and maintains catalog/curriculum data.
+
+## Core Flow
+
+1. User opens the web app and filters by career/cycle/study plan.
+2. User drags/selects valid course sections into the calendar.
+3. User exports the generated schedule.
+4. User can upload an official assignment programming PDF to refresh or add curriculum data.
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    U[Student User] --> FE[Frontend Next.js]
+    FE -->|REST API| PDF[PDF Service FastAPI]
+    FE -->|Future BFF| GW[Gateway NestJS Future]
+    PDF --> DB[(PostgreSQL)]
+    U -->|Upload Assignment Programming PDF| FE
+    FE -->|POST /api/curriculum| PDF
+    PDF -->|Background Jobs parse and refresh| PDF
+    PDF -->|GET /api/catalog and /api/curriculum| FE
+```
+
+## Local Development
+
+From repository root:
+
+```bash
+make db-up
+make be-install
+make be-dev
+```
+
+In another terminal:
+
+```bash
+make fe-install
+make fe-dev
+```
+
+Frontend runs on `http://localhost:3000`.
+
+## Testing
+
+Backend tests (includes parser/API/integration coverage):
+
+```bash
+make be-test
+```
+
+Useful focused commands:
+
+```bash
+cd microservices/pdf-service && uv run pytest -q src/tests/test_e2e_api_db_flow.py -vv -s
+cd microservices/pdf-service && uv run pytest -q src/tests/test_parsing_logic.py -vv
+```
+
+## Environment Notes
+
+- Frontend uses `NEXT_PUBLIC_API_BASE_URL` to call backend APIs.
+- PDF service uses `.env` values such as `DATABASE_URL`, `CORS_ORIGINS`, and paths for input/output dirs.
+- Do not commit secrets or local environment files.
+
+## Deployment
+
+- Frontend is deployed on Vercel.
+- Backend services are deployed separately (Docker/Gunicorn/Uvicorn setup in `microservices/pdf-service`).
+
+## Documentation by Package
+
+- Frontend guide: `frontend/README.md`
+- Gateway guide: `gateway/README.md`
+- PDF service guide: `microservices/pdf-service/README.md`
+- Demo screenshot folder: `docs/images/`

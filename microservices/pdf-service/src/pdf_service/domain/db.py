@@ -13,7 +13,11 @@ engine: AsyncEngine = create_async_engine(
 SessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
 async def get_db():
+    """Yield one async DB session for request-scoped dependency injection.
+
+    :yield: Open async SQLAlchemy session.
+    :rtype: AsyncIterator[AsyncSession]
+    """
     async with SessionLocal() as session:
         yield session
-
 
