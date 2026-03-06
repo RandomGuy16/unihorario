@@ -6,6 +6,8 @@ The web app exposes available courses and sections by career, cycle, and study p
 
 The platform also supports uploading an official assignment programming PDF (the academic-period document with courses/sections) so the backend can parse and register curriculum/catalog data.
 
+🌐 Live Demo: `https://unihorario.vercel.app`
+
 ## Monorepo Structure
 
 - `frontend/`: Next.js app used by students to browse sections and build schedules.
