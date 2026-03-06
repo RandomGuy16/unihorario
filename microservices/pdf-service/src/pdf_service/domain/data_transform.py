@@ -199,7 +199,7 @@ def read_career(school: str):
         # Validate against the Pydantic model for consistent shape.
         return UniversityCurriculum.model_validate(json.load(f))
 
-def _parser_handle_row(row: List[str], course_section: CourseSection, curr_cycle: Cycle, metadata: CareerCurriculumMetadata):
+def _parser_handle_row(row: List[str], section_n: int, curr_cycle: Cycle, metadata: CareerCurriculumMetadata):
     """Parse a single table row into course sections and schedules.
 
     The table rows can represent either a new course section, a schedule
@@ -208,8 +208,8 @@ def _parser_handle_row(row: List[str], course_section: CourseSection, curr_cycle
 
     :param row: Parsed row from a cycle table.
     :type row: list[str]
-    :param course_section: Current section placeholder.
-    :type course_section: CourseSection
+    :param section_n: Current section number.
+    :type section_n: int
     :param curr_cycle: Cycle being built.
     :type curr_cycle: Cycle
     :param metadata: Curriculum metadata used to populate study plan values.
@@ -228,7 +228,7 @@ def _parser_handle_row(row: List[str], course_section: CourseSection, curr_cycle
                 assignment=row[0].split(" ")[2],
                 assignmentId=row[0].split(" ")[0],
                 credits=int(float(row[1])),
-                sectionNumber=int(row[2]),
+                sectionNumber=section_n,
                 teacher=row[3],
                 maxStudents=int(row[4]),
                 courseVisible=True,
@@ -279,11 +279,24 @@ def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
             careerCurriculums=[career_curriculums]
         ))
 
+        # dont rely on format to determine section, I already got a problem there
+        prev_section_assignment = ''
+        section_n: int = 1
+
         for i, table in enumerate(full_tables):
             curr_cycle = Cycle(cycle=f"CICLO {i + 1}", courseSections=[])
             for row in table[1:]:
-                course_section: CourseSection = CourseSection()
-                _parser_handle_row(row, course_section, curr_cycle, metadata)
+                # determine section number by repetitions of same course in same cycle
+                if not row[0]:
+                    pass
+                elif row[0] != prev_section_assignment:
+                    prev_section_assignment = row[0]
+                    section_n = 1
+                elif row[0] == prev_section_assignment:
+                    section_n += 1
+
+                # course_section: CourseSection = CourseSection(sectionNumber=section)
+                _parser_handle_row(row, section_n, curr_cycle, metadata)
 
             out.years[-1].careerCurriculums[-1].cycles.append(curr_cycle)
 
