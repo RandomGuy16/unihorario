@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from pdf_service.domain.repositories import (
+    CatalogRepository,
+    CareerCurriculumRepository,
     SqlCatalogRepository,
     SqlCareerCurriculumRepository,
-    SqlUniversityCurriculumRepository
+    SqlUniversityCurriculumRepository,
+    UniversityCurriculumRepository,
 )
 
 # AI generated example
@@ -27,10 +32,15 @@ from pdf_service.domain.repositories import (
 #    await repos.curriculums.save(curriculum)
 
 class UnitOfWork:
+    session: AsyncSession
+    curriculums: UniversityCurriculumRepository
+    catalogs: CatalogRepository
+    career_curriculums: CareerCurriculumRepository
+
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
         self._session_factory = session_factory
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> UnitOfWork:
         # inits the repositories
         self.session = self._session_factory()
         self.curriculums = SqlUniversityCurriculumRepository(self.session)

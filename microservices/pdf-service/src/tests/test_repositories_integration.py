@@ -191,3 +191,32 @@ async def test_sql_catalog_repository_replace_all(session):
     assert "computer-science" in got_second.careers
     stored = got_second.careers["computer-science"]
     assert stored.career == "Computer Science"
+
+
+@pytest.mark.asyncio
+async def test_sql_catalog_repository_save_is_idempotent_for_same_career_key(session):
+    repo = SqlCatalogRepository(session)
+    first = CatalogCareerData(
+        studyPlans=["2021"],
+        cycles=["CICLO 1"],
+        faculty="Engineering",
+        career="Computer Science",
+    )
+    second = CatalogCareerData(
+        studyPlans=["2021", "2022"],
+        cycles=["CICLO 1", "CICLO 2"],
+        faculty="Engineering",
+        career="Computer Science",
+    )
+
+    await repo.save(first)
+    await session.commit()
+
+    await repo.save(second)
+    await session.commit()
+
+    got = await repo.get()
+    assert "Computer Science" in got.careers
+    stored = got.careers["Computer Science"]
+    assert set(stored.studyPlans) == {"2021", "2022"}
+    assert set(stored.cycles) == {"CICLO 1", "CICLO 2"}

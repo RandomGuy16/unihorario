@@ -46,6 +46,7 @@ be-test: be-test-db-init
 
 be-test-db-init:
 	docker compose up -d db
+	sleep 3
 	docker compose exec -T db sh -lc "psql -U postgres -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='unihorario_test'\" | grep -q 1 || psql -U postgres -d postgres -c 'CREATE DATABASE unihorario_test'"
 	docker compose exec -T db psql -U postgres -d unihorario_test -c "SELECT current_database();"
 
