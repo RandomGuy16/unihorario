@@ -1,37 +1,34 @@
 "use client"
-import { createContext, ReactNode, useContext, useEffect, useState, useCallback } from "react"
-import { FilterOptions, SelectedFilters } from "@/app/models/SelectedFilters"
-import { useCurriculum } from "@/app/providers/useCurriculum";
-import { useCatalog } from "@/app/providers/useCatalog";
-import { Catalog } from "@/app/models/Catalog";
+import {createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState} from "react"
+import {FilterOptions, SelectedFilters} from "@/app/models/SelectedFilters"
+import {useCurriculum} from "@/app/providers/useCurriculum";
+import {useCatalog} from "@/app/providers/useCatalog";
+import {Catalog} from "@/app/models/Catalog";
+import {areEqualArray} from "@/app/utils/misc";
 
 const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: ""}
 const INITIAL_AVAILABLE: FilterOptions = {years: [], careers: [], cycles: []}
 
-
-function computeAvailableOptions(catalog: Catalog, currentCareer: string = ''): FilterOptions {
+function computeAvailableOptions(catalog: Catalog, currentCareer: string = ""): FilterOptions {
   const careers: string[] = Object.keys(catalog.careers)
+  if (!careers.length) return INITIAL_AVAILABLE
 
-  // if there's a current career selected, go with it
-  let career: string = currentCareer
-  // if there are more careers in the catalog. choose the already selected
-  // if not, choose the first from the catalog (this happens on mount)
-  if (careers.length > 0) career = currentCareer ? currentCareer : careers[0];
-
-  const years: string[] = catalog.careers[career].studyPlans
-  const cycles: string[] = catalog.careers[career].cycles
+  const selectedCareer = careers.includes(currentCareer) ? currentCareer : careers[0]
+  const years: string[] = catalog.careers[selectedCareer].studyPlans
+  const cycles: string[] = catalog.careers[selectedCareer].cycles
 
   return {
     careers,
     years: Array.from(new Set(years)),
-    cycles: Array.from(new Set(cycles))}
+    cycles: Array.from(new Set(cycles))
+  }
 }
 
 export interface FiltersContextType {
   selection: SelectedFilters;
   available: FilterOptions;
   updateSelection: (updates: Partial<SelectedFilters>) => void;
-  updateAvailableOptions: (data: Catalog) => void;
+  updateAvailableOptions: (catalog: Catalog, currentCareer?: string) => void;
 }
 
 const FiltersContext = createContext<FiltersContextType | undefined>(undefined)
@@ -43,14 +40,27 @@ export function FiltersContextProvider({children} : {children: ReactNode}) {
   const { data: catalog } = useCatalog()
 
   const updateSelection =  useCallback(
-    (updates: Partial<SelectedFilters>) => setSelection(prev => ({...prev, ...updates})),
-    [setSelection])
-  const updateAvailableOptions = useCallback(
-    (catalog: Catalog, currCareer: string = selection.career) => setAvailable({
-      ...INITIAL_SELECTION,
-      ...computeAvailableOptions(catalog, currCareer)
+    (updates: Partial<SelectedFilters>) => setSelection(prev => {
+      const next = {...prev, ...updates}
+      if (next.year === prev.year && next.cycle === prev.cycle && next.career === prev.career) {
+        return prev
+      }
+      return next
     }),
-    [setAvailable, selection.career]
+    [setSelection])
+
+  const updateAvailableOptions = useCallback(
+    (catalogData: Catalog, currentCareer: string = "") => {
+      const nextAvailable = computeAvailableOptions(catalogData, currentCareer)
+      setAvailable(prev => {
+        const isSame =
+          areEqualArray(prev.careers, nextAvailable.careers) &&
+          areEqualArray(prev.years, nextAvailable.years) &&
+          areEqualArray(prev.cycles, nextAvailable.cycles)
+        return isSame ? prev : nextAvailable
+      })
+    },
+    [setAvailable]
   )
 
   // useEffect block that fetches the curriculum when the selected career changes
@@ -58,35 +68,40 @@ export function FiltersContextProvider({children} : {children: ReactNode}) {
     if (selection.career) {
       fetchCurriculum(selection.career)
     }
-  }, [fetchCurriculum, selection.career, updateAvailableOptions]);
+  }, [fetchCurriculum, selection.career]);
 
   // useEffect block that updates the available filter options
   // each time the catalog changes
   useEffect(() => {
     if (!catalog) return;
-    updateAvailableOptions(catalog)
-  }, [catalog, updateAvailableOptions])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    updateAvailableOptions(catalog, selection.career)
+  }, [catalog, selection.career, updateAvailableOptions])
 
   // useEffect block that auto selects the filters each time the available options change
   useEffect(() => {
-    if (available.careers.length && available.years.length && available.cycles.length) {
-      updateSelection({
-        year: available.years[0],
-        cycle: available.cycles[0],
-        // auto selects first career if not selected
-        career: (!selection.career) ? available.careers[0] : selection.career
-      })
-    }
-  }, [available, selection.career, updateSelection]);
+    if (!available.careers.length) return
+
+    const nextCareer = available.careers.includes(selection.career) ? selection.career : available.careers[0]
+    const nextYear = available.years.includes(selection.year) ? selection.year : (available.years[0] ?? "")
+    const nextCycle = available.cycles.includes(selection.cycle) ? selection.cycle : (available.cycles[0] ?? "")
+
+    if (nextCareer === selection.career && nextYear === selection.year && nextCycle === selection.cycle) return
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    updateSelection({ career: nextCareer, year: nextYear, cycle: nextCycle })
+  }, [available, selection.career, selection.cycle, selection.year, updateSelection]);
+
+  const contextValue = useMemo(() => ({
+    selection,
+    available,
+    updateSelection,
+    updateAvailableOptions
+  }), [selection, available, updateSelection, updateAvailableOptions])
 
   return (
     <>
-      <FiltersContext.Provider value={{
-        selection,
-        available,
-        updateSelection,
-        updateAvailableOptions
-      }}>
+      <FiltersContext.Provider value={contextValue}>
         {children}
       </FiltersContext.Provider>
     </>
