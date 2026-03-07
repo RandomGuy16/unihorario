@@ -14,3 +14,9 @@ export function capitalize(str: string): string {
   }
   return out
 }
+
+// function to compare two arrays of strings
+export function areEqualArray<T>(left: T[], right: T[]): boolean {
+  if (left.length !== right.length) return false
+  return left.every((value, index) => value === right[index])
+}

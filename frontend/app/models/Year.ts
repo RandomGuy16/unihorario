@@ -1,6 +1,7 @@
-import {Career} from "@/app/models/Career";
+import { Career } from "@/app/models/Career";
+import { StudyPlan } from "@/app/models/types";
 
 export interface Year {
-  year: string;
+  year: StudyPlan;
   careerCurriculums: Career[];
 }

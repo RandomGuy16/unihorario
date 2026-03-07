@@ -12,11 +12,27 @@ from pdf_service.domain.uow import UnitOfWork
 
 
 def uow_factory() -> UnitOfWork:
+    """Create a UnitOfWork instance bound to the app session factory.
+
+    :return: Unit of work configured with the shared async session maker.
+    :rtype: UnitOfWork
+    """
     return UnitOfWork(SessionLocal)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Manage FastAPI startup and shutdown lifecycle resources.
+
+    On startup this function initializes DB connectivity and application
+    services (job manager, catalog service, curriculum service), then warms
+    catalog state. On shutdown it disposes the SQLAlchemy engine.
+
+    :param app: FastAPI application instance.
+    :type app: FastAPI
+    :yield: Control back to FastAPI while the app is running.
+    :rtype: AsyncIterator[None]
+    """
     # now initialize the connection with the database
     async with engine.begin() as conn:
         await conn.run_sync(lambda _: None)
@@ -56,16 +72,34 @@ app.add_middleware(
 
 @app.get("/helloworld")
 async def main():
+    """Simple liveness endpoint.
+
+    :return: Basic health payload.
+    :rtype: dict[str, str]
+    """
     return {"Hello": "World"}
 
 
 @app.get("/api/catalog")
 async def get_catalog():
+    """Return current catalog data.
+
+    :return: Catalog model serialized by FastAPI.
+    :rtype: Catalog
+    """
     return await app.state.catalog_service.get_catalog()
 
 
 @app.get("/api/curriculum")
 async def get_career_curriculum(school: str=''):
+    """Fetch curriculum aggregate by school identifier.
+
+    :param school: School/career key used to lookup curriculum.
+    :type school: str
+    :return: University curriculum for the requested school.
+    :rtype: UniversityCurriculum
+    :raises HTTPException: 404 if not found, 500 for unexpected errors.
+    """
     try:
         return await app.state.curriculum_service.get_curriculum(school=school)
     except CurriculumNotFoundError as e:
@@ -75,6 +109,14 @@ async def get_career_curriculum(school: str=''):
 
 @app.post("/api/curriculum")
 async def post_career_curriculum(file: UploadFile = File(...)):
+    """Receive an official curriculum PDF and schedule parsing jobs.
+
+    :param file: Uploaded PDF file from multipart form data.
+    :type file: UploadFile
+    :return: Metadata and background job identifiers.
+    :rtype: CreateCurriculumResponse
+    :raises HTTPException: 400 for invalid PDF shape, 500 for unexpected errors.
+    """
     try:
         logger.info(f"Received pdf upload")
         return await app.state.curriculum_service.receive_curriculum(file.file)
@@ -88,6 +130,14 @@ async def post_career_curriculum(file: UploadFile = File(...)):
 
 @app.get("/api/jobs/await_job/{job_id}")
 async def await_job(job_id: str):
+    """Wait for one background job and return its result.
+
+    :param job_id: Job identifier to await.
+    :type job_id: str
+    :return: Wrapper containing success flag and job result payload.
+    :rtype: AwaitJobResponse
+    :raises HTTPException: 404 for unknown job id, 500 for job/runtime failures.
+    """
     try:
         logger.info(f"Awaiting job {job_id}")
         # result = await job_manager.await_job(job_id)
@@ -103,6 +153,14 @@ async def await_job(job_id: str):
 
 @app.get("/api/jobs/await_tree/{job_id}")
 async def await_tree(job_id: str):
+    """Wait for a job and all chained child jobs to finish.
+
+    :param job_id: Root job identifier.
+    :type job_id: str
+    :return: Wrapper with all job ids and results in the execution tree.
+    :rtype: AwaitTreeResponse
+    :raises HTTPException: 404 for unknown job id, 500 for job/runtime failures.
+    """
     try:
         logger.info(f"Awaiting tree, root: {job_id}")
         results = await app.state.job_manager.await_tree(job_id)
