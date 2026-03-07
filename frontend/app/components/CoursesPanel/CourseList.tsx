@@ -39,28 +39,13 @@ function CourseList() {
   //const { courseRegistry } = useCurriculum()
   const { isMobile } = useResponsive()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-  const { allCourses } = useCourseCache()
+  const { allCourses, getCoursesByFilters } = useCourseCache()
   const { selection } = useFilters()
 
   const coursesToRender = useMemo(() => {
     if (allCourses.size === 0) return []
-    // console.log("CourseList::allCourses: ", allCourses)
-
-    return allCourses.values().filter((course) => {
-      // console.log("CourseList::course.getStudyPlan(): ", course.getStudyPlan())
-      // console.log("CourseList::selection.year: ", selection.year)
-      const sameYear = course.getStudyPlan() === selection.year
-      //console.log("CourseList::course.getSchool(): ", course.getSchool())
-      //console.log("CourseList::selection.career: ", selection.career)
-      const sameCareer = course.getSchool() === selection.career
-      //console.log("CourseList::course.getCycle(): ", course.getCycle())
-      //console.log("CourseList::selection.cycle: ", selection.cycle)
-      const sameCycle = course.getCycle() === selection.cycle
-
-      //console.log("CourseList::sameYear, sameCareer, sameCycle: ", sameYear, sameCareer, sameCycle)
-      return sameYear && sameCareer && sameCycle
-    }).toArray()
-  }, [allCourses, selection.career, selection.cycle, selection.year])
+    return getCoursesByFilters(selection)
+  }, [allCourses, selection, getCoursesByFilters])
   /*
   useEffect(() => {
     console.log("CourseList::coursesToRender: ", coursesToRender)
@@ -100,7 +85,7 @@ function CourseList() {
                 <div
                   className="flex flex-col justify-start items-center flex-1 p-2
                     border-2 border-border rounded-md overflow-y-auto
-                    scrollbar-thin scrollbar-thumb-[rgb(var(--color-border))] scrollbar-track-[rgb(var(--color-surface-muted))]"
+                    scrollbar-thin scrollbar-thumb-border scrollbar-track-surface-muted"
                 >
                   {coursesToRender && renderCoursesSidebar(coursesToRender)}
                 </div>

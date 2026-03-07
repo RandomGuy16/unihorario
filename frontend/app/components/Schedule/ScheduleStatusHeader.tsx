@@ -1,10 +1,10 @@
 import * as htmlToImage from 'html-to-image'
 import { Sheet, Image } from 'lucide-react'
 import ExcelJS, { Worksheet } from 'exceljs'
-import {Schedule} from "@/app/models/Schedule";
-import {capitalize} from "@/app/utils/misc";
-import {useCourseCache} from "@/app/providers/useCourseCache";
-import {useCredits} from "@/app/providers/useCredits";
+import { Schedule } from "@/app/models/Schedule";
+import { capitalize } from "@/app/utils/misc";
+import { useCourseCache } from "@/app/providers/useCourseCache";
+import { useCredits } from "@/app/providers/useCredits";
 
 
 // Represents a time slot with start and end times
@@ -175,18 +175,6 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
             </button>
           </div>
         </div>
-      </div>
-      <div className="flex flex-row justify-between items-center flex-1 mx-2 my-4 p-2 rounded-lg bg-surface-muted">
-        <span className="mx-2 text-body text-foreground-muted">
-          Actualizaci&oacute;n: Sistemas 03/08 22:44
-        </span>
-        {/* <a */}
-        {/*   className='inline-block p-2 rounded-lg text-center text-sm text-black dark:text-white bg-indigo-400/40 dark:bg-indigo-700/40' */}
-        {/*   href='https://docs.google.com/forms/d/e/1FAIpQLSdoM0cX4kJZNB4c2wZ6-1SzW7Ff4Zw4DVBcnHQhO3Z-b0AOkA/viewform?usp=dialog' */}
-        {/*   target="_blank" rel="noopener noreferrer" */}
-        {/* > */}
-        {/*   click aquí */}
-        {/* </a> */}
       </div>
     </div>
   )
