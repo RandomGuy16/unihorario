@@ -4,6 +4,8 @@ import { useCredits } from "@/app/providers/useCredits"
 import { Course } from "@/app/models/Course"
 import { CourseSection } from "@/app/models/CourseSection"
 import { useCurriculum } from "@/app/providers/useCurriculum";
+import { SelectedFilters } from "@/app/models/SelectedFilters";
+import { CourseId } from "@/app/models/types";
 
 
 export function generateCourseKey(year: string | number, id: string, name: string, career: string): string {
@@ -18,8 +20,7 @@ export interface SectionSelectionOps {
   clearSections: () => void;
   setCourseVisible: (course: Course) => void;
   setCourseInvisible: (course: Course) => void;
-  addCourse: (course: Course) => void;
-  removeCourse: (course: Course) => void;
+  getCoursesByFilters: (filters: SelectedFilters) => Course[];
 }
 
 interface CourseCacheContextType extends SectionSelectionOps {
@@ -34,10 +35,39 @@ const CourseCacheContext = createContext<CourseCacheContextType | undefined>(und
 
 export function CourseCacheContextProvider({ children }: { children: ReactNode }) {
   const { courseRegistry } = useCurriculum()
-  const { addCredits, restCredits, resetCredits } = useCredits()
+  const { addCredits, resetCredits } = useCredits()
   const [allCourses, setAllCourses] = useState<Map<string, Course>>(() => courseRegistry || new Map<string, Course>())
   const [selectedSections, setSelectedSections] = useState<Set<CourseSection>>(new Set())
   const [visibleSections, setVisibleSections] = useState<Set<CourseSection>>(new Set())
+
+  // stateful inverted indexes that help with the course render list
+  const coursesByCareer = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    allCourses.forEach((course, key) => {
+      const career = course.getSchool()
+      if (!map.has(career)) map.set(career, new Set())
+      map.get(career)!.add(key)
+    })
+    return map
+  }, [allCourses])
+  const coursesByStudyPlan = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    allCourses.forEach((course, key) => {
+      const studyPlan = course.getStudyPlan()
+      if (!map.has(studyPlan)) map.set(studyPlan, new Set())
+      map.get(studyPlan)!.add(key)
+    })
+    return map
+  }, [allCourses])
+  const coursesByCycle = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    allCourses.forEach((course, key) => {
+      const cycle = course.getCycle()
+      if (!map.has(cycle)) map.set(cycle, new Set())
+      map.get(cycle)!.add(key)
+    })
+    return map
+  }, [allCourses])
 
   // Helper functions to update maps/sets (trigger React state)
   const updateCourses = (updater: (prev: Map<string, Course>) => Map<string, Course>) => {
@@ -58,15 +88,37 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     return count
   }, [allCourses])
 
+  // useEffect block that updates the courses when the registry changes
   useEffect(() => {
     if (courseRegistry && courseRegistry.size > 0) {
-      console.log("CourseCacheContextProvider: Updating courses from registry")
-      setAllCourses(courseRegistry)
+      // console.log("CourseCacheContextProvider: Updating courses from registry")
+      // this function instead of replacing the current map of courses, extends it
+      setAllCourses(prev => {
+        const temp = new Map(prev)
+        courseRegistry.forEach((course, key) => {
+          if (!temp.has(key)) {
+            temp.set(key, course)
+          }
+        })
+        return temp
+      })
     }
   }, [courseRegistry])
 
   const getCourseInstance = (courseKey: string): Course | undefined => {
     return allCourses.get(courseKey)
+  }
+
+  const getCourseByFilters = (filters: SelectedFilters): Course[] => {
+    // get all CourseIds necessary
+    const byCareer   : Set<CourseId> = coursesByCareer.get(filters.career) ?? new Set<CourseId>()
+    const byCycle    : Set<CourseId> = coursesByCycle.get(filters.cycle) ?? new Set<CourseId>()
+    const byStudyPlan: Set<CourseId> = coursesByStudyPlan.get(filters.year) ?? new Set<CourseId>()
+    // intersect all sets to get the courses
+    const byTriplet = byCareer.intersection(byCycle).intersection(byStudyPlan)
+    return Array.from(byTriplet).map(
+      (courseId: CourseId) => allCourses.get(courseId)!
+    )
   }
 
   // add a course
@@ -83,26 +135,6 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     if (!allCourses.has(courseKey)) {
       updateCourses((prev) => prev.set(courseKey, course))
       addCredits(course.getCredits())
-    }
-  }
-
-  // remove a course
-  const _removeCourse = (course: Course) => {
-    const courseKey = generateCourseKey(
-      course.getStudyPlan(),
-      course.getId(),
-      course.getName(),
-      course.getSchool()
-    )
-
-    if (allCourses.has(courseKey)) {
-      updateCourses((prev) => {
-        const temp = new Map(prev)
-        temp.delete(courseKey)
-        return temp
-      })
-      allCourses.delete(courseKey)
-      restCredits(course.getCredits())
     }
   }
 
@@ -142,10 +174,6 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
       sections.forEach(section => prev.delete(section))
       return prev
     })
-
-    // if (course.areAllSectionsUnselected()) {
-    //   _removeCourse(course)
-    // }
   }
 
   const isSectionSelected = (section: CourseSection) => {
@@ -192,12 +220,11 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
       getCourseInstance: getCourseInstance,
       setCourseVisible: setCourseVisible,
       setCourseInvisible: setCourseInvisible,
-      addCourse: _addCourse,
-      removeCourse: _removeCourse,
       addSections: addSections,
       removeSections: removeSections,
       hasSection: isSectionSelected,
-      clearSections: clearSections
+      clearSections: clearSections,
+      getCoursesByFilters: getCourseByFilters
     }}>
       {children}
     </CourseCacheContext.Provider>

@@ -1,6 +1,7 @@
-import {CourseSection} from "@/app/models/CourseSection";
+import { CourseSection } from "@/app/models/CourseSection";
+import { Semester } from "@/app/models/types";
 
 export interface Cycle {
-  cycle: string;
+  cycle: Semester;
   courseSections: CourseSection[];
 }

@@ -1,11 +1,22 @@
+import {
+  Assignment,
+  AssignmentId,
+  Day,
+  SchEndTime,
+  SchNumber,
+  SchStartTime,
+  SchType,
+  SectionNumber, Teacher
+} from "@/app/models/types";
+
 export interface Schedule {
-  assignment: string;
-  assignmentId: string;
-  day: string;
-  start: string;
-  end: string;
-  type: string;
-  scheduleNumber: number;
-  sectionNumber: number;
-  teacher: string;
+  assignment    : Assignment;
+  assignmentId  : AssignmentId;
+  day           : Day;
+  start         : SchStartTime;
+  end           : SchEndTime;
+  type          : SchType;
+  scheduleNumber: SchNumber;
+  sectionNumber : SectionNumber;
+  teacher       : Teacher;
 }

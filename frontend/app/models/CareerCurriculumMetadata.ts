@@ -1,10 +1,11 @@
+import { AcademicPeriod, DatePrinted, Faculty, School, Specialization, StudyPlan } from "@/app/models/types";
 
 
 export interface CareerCurriculumMetadata {
-  faculty: string;
-  school: string;
-  specialization: string;
-  studyPlan: string;
-  academicPeriod: string;
-  datePrinted: string;
+  faculty: Faculty;
+  school: School;
+  specialization: Specialization;
+  studyPlan: StudyPlan;
+  academicPeriod: AcademicPeriod;
+  datePrinted: DatePrinted;
 }

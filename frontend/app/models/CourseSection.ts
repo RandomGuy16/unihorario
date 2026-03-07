@@ -1,12 +1,21 @@
 import { Schedule } from "@/app/models/Schedule";
+import {
+  Assignment,
+  AssignmentId,
+  CourseVisibility,
+  Credits,
+  MaxStudents,
+  SectionNumber,
+  Teacher
+} from "@/app/models/types";
 
 export interface CourseSection {
-  assignment: string;
-  assignmentId: string;
-  sectionNumber: number | string;
-  teacher: string;
-  schedules: Schedule[];
-  credits: number;
-  maxStudents: string;
-  courseVisible: boolean;  // its parent course visibility
+  assignment   : Assignment;
+  assignmentId : AssignmentId;
+  sectionNumber: SectionNumber;
+  teacher      : Teacher;
+  schedules    : Schedule[];
+  credits      : Credits;
+  maxStudents  : MaxStudents;
+  courseVisible: CourseVisibility;  // its parent course visibility
 }
