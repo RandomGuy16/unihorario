@@ -9,20 +9,21 @@ const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: ""}
 const INITIAL_AVAILABLE: FilterOptions = {years: [], careers: [], cycles: []}
 
 
-function computeAvailableOptions(data: Catalog): FilterOptions {
-  const careers: string[] = []
-  const years: string[] = []
-  const cycles: string[] = []
-  console.log("computeAvailableOptions: ", data)
-  for (const [career, careerData] of Object.entries(data.careers)) {
-    careers.push(career)
-    years.push(...careerData.studyPlans)
-    cycles.push(...careerData.cycles)
-  }
+function computeAvailableOptions(catalog: Catalog, currentCareer: string = ''): FilterOptions {
+  const careers: string[] = Object.keys(catalog.careers)
+
+  // if there's a current career selected, go with it
+  let career: string = currentCareer
+  // if there are more careers in the catalog. choose the already selected
+  // if not, choose the first from the catalog (this happens on mount)
+  if (careers.length > 0) career = currentCareer ? currentCareer : careers[0];
+
+  const years: string[] = catalog.careers[career].studyPlans
+  const cycles: string[] = catalog.careers[career].cycles
 
   return {
-    years: Array.from(new Set(years)),
     careers,
+    years: Array.from(new Set(years)),
     cycles: Array.from(new Set(cycles))}
 }
 
@@ -39,39 +40,44 @@ export function FiltersContextProvider({children} : {children: ReactNode}) {
   const [selection, setSelection] = useState<SelectedFilters>(INITIAL_SELECTION)
   const [available, setAvailable] = useState<FilterOptions>(INITIAL_AVAILABLE)
   const { fetchCurriculum } = useCurriculum()
-  const { data } = useCatalog()
+  const { data: catalog } = useCatalog()
 
   const updateSelection =  useCallback(
     (updates: Partial<SelectedFilters>) => setSelection(prev => ({...prev, ...updates})),
     [setSelection])
   const updateAvailableOptions = useCallback(
-    (data: Catalog) => setSelection({...INITIAL_SELECTION, ...computeAvailableOptions(data)}),
-    [setSelection]
+    (catalog: Catalog, currCareer: string = selection.career) => setAvailable({
+      ...INITIAL_SELECTION,
+      ...computeAvailableOptions(catalog, currCareer)
+    }),
+    [setAvailable, selection.career]
   )
 
+  // useEffect block that fetches the curriculum when the selected career changes
   useEffect(() => {
-    if (!data) return;
-
-    const newOptions = computeAvailableOptions(data)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAvailable(newOptions)
-  }, [data])
-
-  useEffect(() => {
-    // this only runs on mount
-    if (!selection.year && !selection.cycle && !selection.career && data) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelection({
-        year: available.years[0],
-        career: available.careers[0],
-        cycle: available.cycles[0]
-      });
+    if (selection.career) {
+      fetchCurriculum(selection.career)
     }
-  }, [available]);
+  }, [fetchCurriculum, selection.career, updateAvailableOptions]);
 
+  // useEffect block that updates the available filter options
+  // each time the catalog changes
   useEffect(() => {
-    if (selection.career) fetchCurriculum(selection.career)
-  }, [selection.career]);
+    if (!catalog) return;
+    updateAvailableOptions(catalog)
+  }, [catalog, updateAvailableOptions])
+
+  // useEffect block that auto selects the filters each time the available options change
+  useEffect(() => {
+    if (available.careers.length && available.years.length && available.cycles.length) {
+      updateSelection({
+        year: available.years[0],
+        cycle: available.cycles[0],
+        // auto selects first career if not selected
+        career: (!selection.career) ? available.careers[0] : selection.career
+      })
+    }
+  }, [available, selection.career, updateSelection]);
 
   return (
     <>
