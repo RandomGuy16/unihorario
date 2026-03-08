@@ -61,7 +61,7 @@ pnpm lint
 Use this section to document the product "golden path" with screenshots.
 
 1. Select career, cycle, and study plan from sidebar filters.
-   ![Step 1 - Filters](../docs/images/demo-step-1-filters.png)
+   ![Step 1 - Filters](../docs/images/demo-step-1-filters.gif)
 2. Add course sections to the schedule grid.
    ![Step 2 - Add sections](../docs/images/demo-step-2-add-sections.png)
 3. Resolve overlap constraints and verify final schedule.
