@@ -1,10 +1,11 @@
+import { describe, expect, it } from "vitest";
 import { Schedule } from "@/app/models/Schedule";
 import { calculateECPosition, REM_HEIGHT_PER_HOUR } from "@/app/utils/EventCard";
 
 function makeSchedule(overrides: Partial<Schedule>): Schedule {
   return {
     assignment: "Course",
-    assignmentId: 1,
+    assignmentId: "1",
     day: "LUNES",
     start: "08:00",
     end: "10:00",

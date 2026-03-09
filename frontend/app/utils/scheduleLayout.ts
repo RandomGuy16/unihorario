@@ -14,8 +14,9 @@ export interface ScheduleEventLayout {
 
 export function parseHourIndex(time: string): number {
   const hour = Number(time.split(":")[0]);
+  const minute = Number(time.split(":")[1]);
   if (Number.isNaN(hour)) return 0;
-  return hour - DAY_START_HOUR;
+  return hour - DAY_START_HOUR + minute / 60;
 }
 
 export function getScheduleIdentityValue(schedule: Schedule): string {

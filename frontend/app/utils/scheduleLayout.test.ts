@@ -1,7 +1,7 @@
+import { describe, expect, it } from "vitest";
 import { Schedule } from "@/app/models/Schedule";
 import {
   buildDayLayouts,
-  DAY_START_HOUR,
   getScheduleIdentityValue,
   parseHourIndex,
   ScheduleEventLayout
@@ -10,7 +10,7 @@ import {
 function makeSchedule(overrides: Partial<Schedule>): Schedule {
   return {
     assignment: "Course",
-    assignmentId: 1,
+    assignmentId: "1",
     day: "LUNES",
     start: "08:00",
     end: "09:00",
@@ -31,9 +31,9 @@ describe("scheduleLayout", () => {
 
   it("builds deterministic lanes and max overlap for concurrent events", () => {
     const schedules = [
-      makeSchedule({ assignmentId: 1, scheduleNumber: 1, start: "08:00", end: "10:00" }),
-      makeSchedule({ assignmentId: 2, scheduleNumber: 1, start: "09:00", end: "11:00" }),
-      makeSchedule({ assignmentId: 3, scheduleNumber: 1, start: "09:00", end: "10:00" })
+      makeSchedule({ assignmentId: "1", scheduleNumber: 1, start: "08:00", end: "10:00" }),
+      makeSchedule({ assignmentId: "2", scheduleNumber: 1, start: "09:00", end: "11:00" }),
+      makeSchedule({ assignmentId: "3", scheduleNumber: 1, start: "09:00", end: "10:00" })
     ];
 
     const events: ScheduleEventLayout[] = schedules.map((schedule, sectionIndex) => ({
@@ -58,8 +58,8 @@ describe("scheduleLayout", () => {
   });
 
   it("reuses lanes when events do not overlap", () => {
-    const first = makeSchedule({ assignmentId: 10, start: "08:00", end: "09:00" });
-    const second = makeSchedule({ assignmentId: 11, start: "09:00", end: "10:00" });
+    const first = makeSchedule({ assignmentId: "10", start: "08:00", end: "09:00" });
+    const second = makeSchedule({ assignmentId: "11", start: "09:00", end: "10:00" });
 
     const events: ScheduleEventLayout[] = [first, second].map((schedule, sectionIndex) => ({
       sectionIndex,
@@ -81,10 +81,10 @@ describe("scheduleLayout", () => {
     // 1: 08-12, 2: 08-10, 3: 08-14, 4: 12-14
     // Event 4 only directly overlaps with event 3, but it is in the same conflict chain.
     const schedules = [
-      makeSchedule({ assignmentId: 21, start: "08:00", end: "12:00" }),
-      makeSchedule({ assignmentId: 22, start: "08:00", end: "10:00" }),
-      makeSchedule({ assignmentId: 23, start: "08:00", end: "14:00" }),
-      makeSchedule({ assignmentId: 24, start: "12:00", end: "14:00" })
+      makeSchedule({ assignmentId: "21", start: "08:00", end: "12:00" }),
+      makeSchedule({ assignmentId: "22", start: "08:00", end: "10:00" }),
+      makeSchedule({ assignmentId: "23", start: "08:00", end: "14:00" }),
+      makeSchedule({ assignmentId: "24", start: "12:00", end: "14:00" })
     ];
 
     const events: ScheduleEventLayout[] = schedules.map((schedule, sectionIndex) => ({
@@ -107,11 +107,11 @@ describe("scheduleLayout", () => {
     // section 1: 08-11 and 12-14
     // section 2: 08-10 and 11-14
     // section 3: 08-12
-    const s1a = makeSchedule({ assignmentId: 31, sectionNumber: 1, scheduleNumber: 1, start: "08:00", end: "11:00" });
-    const s1b = makeSchedule({ assignmentId: 31, sectionNumber: 1, scheduleNumber: 2, start: "12:00", end: "14:00" });
-    const s2a = makeSchedule({ assignmentId: 32, sectionNumber: 2, scheduleNumber: 1, start: "08:00", end: "10:00" });
-    const s2b = makeSchedule({ assignmentId: 32, sectionNumber: 2, scheduleNumber: 2, start: "11:00", end: "14:00" });
-    const s3 = makeSchedule({ assignmentId: 33, sectionNumber: 3, scheduleNumber: 1, start: "08:00", end: "12:00" });
+    const s1a = makeSchedule({ assignmentId: "31", sectionNumber: 1, scheduleNumber: 1, start: "08:00", end: "11:00" });
+    const s1b = makeSchedule({ assignmentId: "31", sectionNumber: 1, scheduleNumber: 2, start: "12:00", end: "14:00" });
+    const s2a = makeSchedule({ assignmentId: "32", sectionNumber: 2, scheduleNumber: 1, start: "08:00", end: "10:00" });
+    const s2b = makeSchedule({ assignmentId: "32", sectionNumber: 2, scheduleNumber: 2, start: "11:00", end: "14:00" });
+    const s3 = makeSchedule({ assignmentId: "33", sectionNumber: 3, scheduleNumber: 1, start: "08:00", end: "12:00" });
 
     const schedules = [s1a, s1b, s2a, s2b, s3];
     const sectionIndexes = [0, 0, 1, 1, 2];
