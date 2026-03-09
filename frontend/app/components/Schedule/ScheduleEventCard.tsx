@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'motion/react'
+import { useState } from "react";
 import { CourseSection } from "@/app/models/CourseSection";
 import { Schedule } from "@/app/models/Schedule";
 import { CourseColor, getCourseColor } from "@/app/utils/CourseCard";
@@ -18,6 +18,7 @@ interface ScheduleEventCardProps {
   };
 }
 function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCardProps) {
+  const [isHovered, setIsHovered] = useState(false)
   const { theme } = useTheme()
 
   // get the color pair for the event card
@@ -27,43 +28,52 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
   const textColor = theme == "dark" ? colorPair.background : colorPair.text
   const bgColor = theme == "dark" ? colorPair.text : colorPair.background
 
-  // handle theme changes
-  /*
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    setTextColor(e.matches ? colorPair.background : colorPair.text)
-    setBgColor(e.matches ? colorPair.text : colorPair.background)
-  })
-  */
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.85, y: 16 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.85, y: -8 }}
+      initial={{ opacity: 0, scale: 0.92, y: 12, filter: 'blur(4px)' }}
+      animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, scale: 0.9, y: -10, filter: 'blur(4px)' }}
+      whileHover={{
+        scale: 1.03,
+        y: -4,
+        boxShadow: '0 10px 24px rgba(0, 0, 0, 0.18)',
+        backgroundColor: `${bgColor}88`,
+        borderColor: `${textColor}AA`
+      }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
       transition={{
-        layout: { type: 'spring', stiffness: 300, damping: 24 },
-        duration: 0.28,
+        layout: { type: 'spring', stiffness: 380, damping: 30 },
+        duration: 0.2,
         ease: 'easeOut'
       }}
-      className="
-        absolute p-1 min-h-20 w-full rounded-lg border-2 text-ellipsis text-micro md:text-caption
-        lg:text-body select-none
-      "
+      className="absolute border border-transparent rounded-lg"
       style={{
         top: positionStyle.top,
         height: positionStyle.height,
-        backgroundColor: `${bgColor}60`,
-        borderColor: `${textColor}60`,
         width: positionStyle.width,
-        left: positionStyle.left
+        left: positionStyle.left,
+        zIndex: isHovered ? 30 : 10
       }}>
-      <p className='inline-block w-full overflow-hidden text-ellipsis'>
-        {capitalize(schedule.assignment)}<br />
-        sección {section.sectionNumber}<br />
-        {section.teacher}<br />
-        Tope: {section.maxStudents}
-      </p>
+      <div
+        className="
+        absolute p-1 min-h-20 w-full border-l-8 rounded-lg text-ellipsis text-micro md:text-caption
+        lg:text-body select-none shadow-elev-1
+      "
+      style={{
+        backgroundColor: `${bgColor}BB`,
+        borderColor: `${textColor}BB`,
+        height: positionStyle.height,
+      }}>
+        <p className='inline-block w-full overflow-hidden text-ellipsis'>
+          {capitalize(schedule.assignment)}<br />
+          sección {section.sectionNumber}<br />
+          {section.teacher}<br />
+          Tope: {section.maxStudents}
+        </p>
+      </div>
     </motion.div>
   )
 }
