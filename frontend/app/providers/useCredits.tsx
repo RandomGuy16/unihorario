@@ -16,8 +16,8 @@ export function CreditsContextProvider({children}: {children: ReactNode}) {
   return (
     <CreditsContext.Provider value={{
       credits,
-      addCredits: (credits: number) => setCredits(credits + credits),
-      restCredits: (credits: number) => setCredits(credits - credits),
+      addCredits: (credits: number) => setCredits(prev => prev + credits),
+      restCredits: (credits: number) => setCredits(prev => prev - credits),
       resetCredits: () => setCredits(0)
     }}>
       {children}

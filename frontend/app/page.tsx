@@ -12,17 +12,16 @@ export default function Home() {
 
   return (
     <div className="grid calendar-layout relative">
-      <CourseCacheContextProvider>
-        <aside className="area-sidebar fixed top-20 z-50 left-0 h-[calc(100vh-5rem)] md:w-[300px] lg:w-[360px] grid-rows-1 row-span-1 flex flex-col justify-start items-center">
-          <FiltersContextProvider>
+      <FiltersContextProvider>
+        <CourseCacheContextProvider>
+          <aside className="area-sidebar fixed top-20 z-50 left-0 h-[calc(100vh-5rem)] md:w-[300px] lg:w-[360px] grid-rows-1 row-span-1 flex flex-col justify-start items-center">
             <CourseList/>
-          </FiltersContextProvider>
-        </aside>
-        <main className="area-main row-span-1 w-full h-full flex flex-row justify-center">
-          <ScheduleGrid/>
-        </main>
-
-      </CourseCacheContextProvider>
+          </aside>
+          <main className="area-main row-span-1 w-full h-full flex flex-row justify-center">
+            <ScheduleGrid/>
+          </main>
+        </CourseCacheContextProvider>
+      </FiltersContextProvider>
     </div>
   )
 }
