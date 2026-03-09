@@ -13,6 +13,8 @@ const THURSDAY_ID = "thursday"
 const FRIDAY_ID = "friday"
 const SATURDAY_ID = "saturday"
 const SUNDAY_ID = "sunday"
+const DAY_START_HOUR = 8
+const DAY_TOTAL_HOURS = 15
 
 
 // important interfaces/constants
@@ -38,15 +40,24 @@ interface DayData {
 
 // element for the calendar grid
 function ScheduleGrid() {
-  const visibleSections = Array.from(useCourseCache().selectedSections)
-    .filter((section) => section.courseVisible)
+  const { selectedSections } = useCourseCache()
+
+  const visibleSections = useMemo(
+    () => Array.from(selectedSections)
+      .filter((section) => section.courseVisible)
+      .sort((left, right) =>
+        left.assignmentId - right.assignmentId ||
+        left.sectionNumber - right.sectionNumber
+      ),
+    [selectedSections]
+  )
 
   const filteredData = useMemo(() => {
     const daysData: DayData[] = Array.from({ length: 6 }, () => {
       return {
         schedules: [],
         eventCards: [],
-        occupiedSlots: Array.from({ length: 15 }, () => [0, 0]) // 13 slots for hours 8 to 20
+        occupiedSlots: Array.from({ length: DAY_TOTAL_HOURS }, () => [0, 0])
       }
     })
 
@@ -58,10 +69,11 @@ function ScheduleGrid() {
         if (dayIndex === undefined) return
 
         // mark the slots as occupied
-        const startHourIndex = Number(schedule.start.split(':')[0]) - 8
-        const endHourIndex = Number(schedule.end.split(':')[0]) - 8
+        const startHourIndex = Number(schedule.start.split(':')[0]) - DAY_START_HOUR
+        const endHourIndex = Number(schedule.end.split(':')[0]) - DAY_START_HOUR
         // add 1 to the occupied slots for each hour in the range
         for (let i = startHourIndex; i < endHourIndex; i++) {
+          if (i < 0 || i >= DAY_TOTAL_HOURS) continue
           daysData[dayIndex].occupiedSlots[i][0] += 1
         }
         daysData[dayIndex].schedules.push(schedule)
@@ -69,14 +81,21 @@ function ScheduleGrid() {
     })
 
     // second foreach loop to fill the event cards
-    visibleSections.forEach((section, i) => {
-      section.schedules.forEach((schedule, j) => {
+    visibleSections.forEach((section) => {
+      const sortedSchedules = [...section.schedules].sort((left, right) =>
+        left.day.localeCompare(right.day) ||
+        left.start.localeCompare(right.start) ||
+        left.end.localeCompare(right.end) ||
+        left.scheduleNumber - right.scheduleNumber
+      )
+
+      sortedSchedules.forEach((schedule) => {
         const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
         // skip if not a valid day
         if (dayIndex === undefined) return
 
         const eventCard = (<ScheduleEventCard
-          key={`${i}${j} ${section.assignmentId} ${section.assignment}`}
+          key={`${section.assignmentId}-${section.sectionNumber}-${schedule.scheduleNumber}-${schedule.day}-${schedule.start}-${schedule.end}`}
           schedule={schedule}
           section={section}
           positionStyle={calculateECPosition(schedule, daysData[dayIndex].occupiedSlots)}
