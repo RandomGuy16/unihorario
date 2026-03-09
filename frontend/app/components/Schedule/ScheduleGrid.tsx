@@ -4,6 +4,13 @@ import { ReactElement, useMemo } from 'react'
 import { Schedule } from "@/app/models/Schedule";
 import { calculateECPosition } from "@/app/utils/EventCard";
 import { useCourseCache } from "@/app/providers/useCourseCache";
+import {
+  buildDayLayouts,
+  DAY_TOTAL_HOURS,
+  parseHourIndex,
+  ScheduleEventLayout,
+  getScheduleIdentityValue
+} from "@/app/utils/scheduleLayout";
 
 
 const MONDAY_ID = "monday"
@@ -32,54 +39,64 @@ const DAYS_MAP: Record<DayKey, number> = {
 interface DayData {
   schedules: Schedule[];
   eventCards: ReactElement[];
-  occupiedSlots: number[][];  // slots occupied by events;
 }
 
 
 // element for the calendar grid
 function ScheduleGrid() {
-  const visibleSections = Array.from(useCourseCache().selectedSections)
-    .filter((section) => section.courseVisible)
+  const { selectedSections } = useCourseCache()
+
+  const visibleSections = useMemo(
+    () => Array.from(selectedSections)
+      .filter((section) => section.courseVisible)
+      .sort((left, right) =>
+        left.sectionNumber - right.sectionNumber
+      ),
+    [selectedSections]
+  )
 
   const filteredData = useMemo(() => {
     const daysData: DayData[] = Array.from({ length: 6 }, () => {
       return {
         schedules: [],
-        eventCards: [],
-        occupiedSlots: Array.from({ length: 15 }, () => [0, 0]) // 13 slots for hours 8 to 20
+        eventCards: []
       }
     })
+    // Keep a per-day staging list so we can run deterministic lane allocation once.
+    const dayLayouts: ScheduleEventLayout[][] = Array.from({ length: 6 }, () => [])
 
-    // first foreach loop to fill the daysData with schedules and occupied slots
-    visibleSections.forEach((section) => {
+    visibleSections.forEach((section, sectionIndex) => {
       section.schedules.forEach((schedule) => {
         const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
-        // skip if not a valid day
         if (dayIndex === undefined) return
 
-        // mark the slots as occupied
-        const startHourIndex = Number(schedule.start.split(':')[0]) - 8
-        const endHourIndex = Number(schedule.end.split(':')[0]) - 8
-        // add 1 to the occupied slots for each hour in the range
-        for (let i = startHourIndex; i < endHourIndex; i++) {
-          daysData[dayIndex].occupiedSlots[i][0] += 1
-        }
+        const startHourIndex = parseHourIndex(schedule.start)
+        const endHourIndex = parseHourIndex(schedule.end)
+        if (endHourIndex <= startHourIndex) return
+
         daysData[dayIndex].schedules.push(schedule)
+        dayLayouts[dayIndex].push({
+          sectionIndex,
+          schedule,
+          startHourIndex,
+          endHourIndex,
+          laneIndex: 0,
+          maxConcurrent: 1
+        })
       })
     })
 
-    // second foreach loop to fill the event cards
-    visibleSections.forEach((section, i) => {
-      section.schedules.forEach((schedule, j) => {
-        const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
-        // skip if not a valid day
-        if (dayIndex === undefined) return
-
+    dayLayouts.forEach((events, dayIndex) => {
+      // Build stable lane + overlap metadata before generating cards.
+      const laidOutEvents = buildDayLayouts(events)
+      laidOutEvents.forEach((event) => {
+        const section = visibleSections[event.sectionIndex]
+        if (!section) return
         const eventCard = (<ScheduleEventCard
-          key={`${i}${j} ${section.assignmentId} ${section.assignment}`}
-          schedule={schedule}
+          key={getScheduleIdentityValue(event.schedule)}
+          schedule={event.schedule}
           section={section}
-          positionStyle={calculateECPosition(schedule, daysData[dayIndex].occupiedSlots)}
+          positionStyle={calculateECPosition(event.schedule, event.laneIndex, event.maxConcurrent)}
         />)
         daysData[dayIndex].eventCards.push(eventCard)
       })
