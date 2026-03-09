@@ -24,8 +24,8 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
   const colorPair: CourseColor = getCourseColor(section.assignmentId)
 
   // useState to manage text and background colors
-  const [textColor, setTextColor] = useState<string>(theme == "dark" ? colorPair.background : colorPair.text)
-  const [bgColor, setBgColor] = useState<string>(theme == "dark" ? colorPair.text : colorPair.background)
+  const textColor = theme == "dark" ? colorPair.background : colorPair.text
+  const bgColor = theme == "dark" ? colorPair.text : colorPair.background
 
   // handle theme changes
   /*

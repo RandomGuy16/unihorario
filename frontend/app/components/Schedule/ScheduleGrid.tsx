@@ -44,15 +44,15 @@ interface DayData {
 
 // element for the calendar grid
 function ScheduleGrid() {
-  const { selectedSections } = useCourseCache()
+  const { visibleSections } = useCourseCache()
 
-  const visibleSections = useMemo(
-    () => Array.from(selectedSections)
+  const sectionsToRender = useMemo(
+    () => Array.from(visibleSections)
       .filter((section) => section.courseVisible)
       .sort((left, right) =>
         left.sectionNumber - right.sectionNumber
       ),
-    [selectedSections]
+    [visibleSections]
   )
 
   const filteredData = useMemo(() => {
@@ -65,7 +65,7 @@ function ScheduleGrid() {
     // Keep a per-day staging list so we can run deterministic lane allocation once.
     const dayLayouts: ScheduleEventLayout[][] = Array.from({ length: 6 }, () => [])
 
-    visibleSections.forEach((section, sectionIndex) => {
+    sectionsToRender.forEach((section, sectionIndex) => {
       section.schedules.forEach((schedule) => {
         const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
         if (dayIndex === undefined) return
@@ -90,7 +90,7 @@ function ScheduleGrid() {
       // Build stable lane + overlap metadata before generating cards.
       const laidOutEvents = buildDayLayouts(events)
       laidOutEvents.forEach((event) => {
-        const section = visibleSections[event.sectionIndex]
+        const section = sectionsToRender[event.sectionIndex]
         if (!section) return
         const eventCard = (<ScheduleEventCard
           key={getScheduleIdentityValue(event.schedule)}
@@ -102,7 +102,7 @@ function ScheduleGrid() {
       })
     })
     return daysData
-  }, [visibleSections])
+  }, [sectionsToRender])
 
   // Lists to store the schedules of each day
   const mondayData = filteredData[0]

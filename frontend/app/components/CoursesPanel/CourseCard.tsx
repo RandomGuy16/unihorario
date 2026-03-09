@@ -76,8 +76,12 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
   const [areAllChecked, setAreAllChecked] = useState(course.areAllSectionsSelected())
   const [isCourseVisible, setIsCourseVisible] = useState(course.getVisibility())
 
-  const textColor = theme === 'dark' ? colorPair.background : colorPair.text
-  const bgColor = theme === 'dark' ? colorPair.text : colorPair.background
+  const textColor = theme === 'dark'
+    ? `${colorPair.background}${isCourseVisible ? "FF" : "AA"}`
+    : `${colorPair.text}${isCourseVisible ? "FF" : "AA"}`
+  const bgColor = theme === 'dark'
+    ? `${colorPair.text}${isCourseVisible ? "FF" : "AA"}`
+    : `${colorPair.background}${isCourseVisible ? "FF" : "AA"}`
 
   // function to handle the visibility of the course
   const handleCourseVisibility = () => {
@@ -95,9 +99,9 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
       transform transition-all duration-300 ease-in-out"
       id={course.getId()}
       style={{
-        backgroundColor: `${bgColor}${isCourseVisible ? "80" : "40"}`,
-        color: `${textColor}${isCourseVisible ? "FF" : "AA"}`,
-        borderColor: `${textColor}${isCourseVisible ? "FF" : "AA"}`
+        backgroundColor: bgColor, // `${bgColor}${isCourseVisible ? "80" : "40"}`,
+        color: textColor, //`${textColor}${isCourseVisible ? "FF" : "AA"}`,
+        borderColor: textColor //`${textColor}${isCourseVisible ? "FF" : "AA"}`
       }}
     >
       <div className="flex flex-row justify-between items-start w-full cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
