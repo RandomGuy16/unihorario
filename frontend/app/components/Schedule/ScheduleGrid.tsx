@@ -34,7 +34,75 @@ const DAYS_MAP: Record<DayKey, number> = {
 interface DayData {
   schedules: Schedule[];
   eventCards: ReactElement[];
-  occupiedSlots: number[][];  // slots occupied by events;
+}
+
+interface ScheduleEventLayout {
+  sectionIndex: number;
+  schedule: Schedule;
+  startHourIndex: number;
+  endHourIndex: number;
+  laneIndex: number;
+  maxConcurrent: number;
+}
+
+function parseHourIndex(time: string): number {
+  const hour = Number(time.split(":")[0])
+  if (Number.isNaN(hour)) return 0
+  return hour - DAY_START_HOUR
+}
+
+function getScheduleIdentityValue(schedule: Schedule): string {
+  return `${schedule.assignmentId}-${schedule.sectionNumber}-${schedule.scheduleNumber}-${schedule.day}-${schedule.start}-${schedule.end}`
+}
+
+function buildDayLayouts(events: ScheduleEventLayout[]): ScheduleEventLayout[] {
+  if (!events.length) return []
+
+  // Count overlaps per hour slot for width calculation.
+  const occupancy = Array.from({ length: DAY_TOTAL_HOURS }, () => 0)
+  for (const event of events) {
+    for (let i = event.startHourIndex; i < event.endHourIndex; i++) {
+      if (i < 0 || i >= DAY_TOTAL_HOURS) continue
+      occupancy[i] += 1
+    }
+  }
+
+  const sorted = [...events].sort((left, right) =>
+    left.startHourIndex - right.startHourIndex ||
+    left.endHourIndex - right.endHourIndex ||
+    left.sectionIndex - right.sectionIndex ||
+    getScheduleIdentityValue(left.schedule).localeCompare(getScheduleIdentityValue(right.schedule))
+  )
+
+  // Keep active events to assign the smallest available lane deterministically.
+  const active: Array<{ endHourIndex: number; laneIndex: number }> = []
+  const assigned = sorted.map((event) => {
+    // Remove lanes from events that already ended before current start.
+    for (let i = active.length - 1; i >= 0; i--) {
+      if (active[i].endHourIndex <= event.startHourIndex) active.splice(i, 1)
+    }
+
+    const usedLanes = new Set(active.map((item) => item.laneIndex))
+    let laneIndex = 0
+    while (usedLanes.has(laneIndex)) laneIndex += 1
+
+    active.push({ endHourIndex: event.endHourIndex, laneIndex })
+
+    // Width is based on peak overlap in this event's time range.
+    let maxConcurrent = 1
+    for (let i = event.startHourIndex; i < event.endHourIndex; i++) {
+      if (i < 0 || i >= DAY_TOTAL_HOURS) continue
+      maxConcurrent = Math.max(maxConcurrent, occupancy[i])
+    }
+
+    return {
+      ...event,
+      laneIndex,
+      maxConcurrent
+    }
+  })
+
+  return assigned
 }
 
 
@@ -46,7 +114,6 @@ function ScheduleGrid() {
     () => Array.from(selectedSections)
       .filter((section) => section.courseVisible)
       .sort((left, right) =>
-        left.assignmentId - right.assignmentId ||
         left.sectionNumber - right.sectionNumber
       ),
     [selectedSections]
@@ -56,49 +123,42 @@ function ScheduleGrid() {
     const daysData: DayData[] = Array.from({ length: 6 }, () => {
       return {
         schedules: [],
-        eventCards: [],
-        occupiedSlots: Array.from({ length: DAY_TOTAL_HOURS }, () => [0, 0])
+        eventCards: []
       }
     })
+    const dayLayouts: ScheduleEventLayout[][] = Array.from({ length: 6 }, () => [])
 
-    // first foreach loop to fill the daysData with schedules and occupied slots
-    visibleSections.forEach((section) => {
+    visibleSections.forEach((section, sectionIndex) => {
       section.schedules.forEach((schedule) => {
         const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
-        // skip if not a valid day
         if (dayIndex === undefined) return
 
-        // mark the slots as occupied
-        const startHourIndex = Number(schedule.start.split(':')[0]) - DAY_START_HOUR
-        const endHourIndex = Number(schedule.end.split(':')[0]) - DAY_START_HOUR
-        // add 1 to the occupied slots for each hour in the range
-        for (let i = startHourIndex; i < endHourIndex; i++) {
-          if (i < 0 || i >= DAY_TOTAL_HOURS) continue
-          daysData[dayIndex].occupiedSlots[i][0] += 1
-        }
+        const startHourIndex = parseHourIndex(schedule.start)
+        const endHourIndex = parseHourIndex(schedule.end)
+        if (endHourIndex <= startHourIndex) return
+
         daysData[dayIndex].schedules.push(schedule)
+        dayLayouts[dayIndex].push({
+          sectionIndex,
+          schedule,
+          startHourIndex,
+          endHourIndex,
+          laneIndex: 0,
+          maxConcurrent: 1
+        })
       })
     })
 
-    // second foreach loop to fill the event cards
-    visibleSections.forEach((section) => {
-      const sortedSchedules = [...section.schedules].sort((left, right) =>
-        left.day.localeCompare(right.day) ||
-        left.start.localeCompare(right.start) ||
-        left.end.localeCompare(right.end) ||
-        left.scheduleNumber - right.scheduleNumber
-      )
-
-      sortedSchedules.forEach((schedule) => {
-        const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
-        // skip if not a valid day
-        if (dayIndex === undefined) return
-
+    dayLayouts.forEach((events, dayIndex) => {
+      const laidOutEvents = buildDayLayouts(events)
+      laidOutEvents.forEach((event) => {
+        const section = visibleSections[event.sectionIndex]
+        if (!section) return
         const eventCard = (<ScheduleEventCard
-          key={`${section.assignmentId}-${section.sectionNumber}-${schedule.scheduleNumber}-${schedule.day}-${schedule.start}-${schedule.end}`}
-          schedule={schedule}
+          key={getScheduleIdentityValue(event.schedule)}
+          schedule={event.schedule}
           section={section}
-          positionStyle={calculateECPosition(schedule, daysData[dayIndex].occupiedSlots)}
+          positionStyle={calculateECPosition(event.schedule, event.laneIndex, event.maxConcurrent)}
         />)
         daysData[dayIndex].eventCards.push(eventCard)
       })
