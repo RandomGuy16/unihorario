@@ -4,6 +4,13 @@ import { ReactElement, useMemo } from 'react'
 import { Schedule } from "@/app/models/Schedule";
 import { calculateECPosition } from "@/app/utils/EventCard";
 import { useCourseCache } from "@/app/providers/useCourseCache";
+import {
+  buildDayLayouts,
+  DAY_TOTAL_HOURS,
+  parseHourIndex,
+  ScheduleEventLayout,
+  getScheduleIdentityValue
+} from "@/app/utils/scheduleLayout";
 
 
 const MONDAY_ID = "monday"
@@ -13,8 +20,6 @@ const THURSDAY_ID = "thursday"
 const FRIDAY_ID = "friday"
 const SATURDAY_ID = "saturday"
 const SUNDAY_ID = "sunday"
-const DAY_START_HOUR = 8
-const DAY_TOTAL_HOURS = 15
 
 
 // important interfaces/constants
@@ -34,75 +39,6 @@ const DAYS_MAP: Record<DayKey, number> = {
 interface DayData {
   schedules: Schedule[];
   eventCards: ReactElement[];
-}
-
-interface ScheduleEventLayout {
-  sectionIndex: number;
-  schedule: Schedule;
-  startHourIndex: number;
-  endHourIndex: number;
-  laneIndex: number;
-  maxConcurrent: number;
-}
-
-function parseHourIndex(time: string): number {
-  const hour = Number(time.split(":")[0])
-  if (Number.isNaN(hour)) return 0
-  return hour - DAY_START_HOUR
-}
-
-function getScheduleIdentityValue(schedule: Schedule): string {
-  return `${schedule.assignmentId}-${schedule.sectionNumber}-${schedule.scheduleNumber}-${schedule.day}-${schedule.start}-${schedule.end}`
-}
-
-function buildDayLayouts(events: ScheduleEventLayout[]): ScheduleEventLayout[] {
-  if (!events.length) return []
-
-  // Count overlaps per hour slot for width calculation.
-  const occupancy = Array.from({ length: DAY_TOTAL_HOURS }, () => 0)
-  for (const event of events) {
-    for (let i = event.startHourIndex; i < event.endHourIndex; i++) {
-      if (i < 0 || i >= DAY_TOTAL_HOURS) continue
-      occupancy[i] += 1
-    }
-  }
-
-  const sorted = [...events].sort((left, right) =>
-    left.startHourIndex - right.startHourIndex ||
-    left.endHourIndex - right.endHourIndex ||
-    left.sectionIndex - right.sectionIndex ||
-    getScheduleIdentityValue(left.schedule).localeCompare(getScheduleIdentityValue(right.schedule))
-  )
-
-  // Keep active events to assign the smallest available lane deterministically.
-  const active: Array<{ endHourIndex: number; laneIndex: number }> = []
-  const assigned = sorted.map((event) => {
-    // Remove lanes from events that already ended before current start.
-    for (let i = active.length - 1; i >= 0; i--) {
-      if (active[i].endHourIndex <= event.startHourIndex) active.splice(i, 1)
-    }
-
-    const usedLanes = new Set(active.map((item) => item.laneIndex))
-    let laneIndex = 0
-    while (usedLanes.has(laneIndex)) laneIndex += 1
-
-    active.push({ endHourIndex: event.endHourIndex, laneIndex })
-
-    // Width is based on peak overlap in this event's time range.
-    let maxConcurrent = 1
-    for (let i = event.startHourIndex; i < event.endHourIndex; i++) {
-      if (i < 0 || i >= DAY_TOTAL_HOURS) continue
-      maxConcurrent = Math.max(maxConcurrent, occupancy[i])
-    }
-
-    return {
-      ...event,
-      laneIndex,
-      maxConcurrent
-    }
-  })
-
-  return assigned
 }
 
 
@@ -126,6 +62,7 @@ function ScheduleGrid() {
         eventCards: []
       }
     })
+    // Keep a per-day staging list so we can run deterministic lane allocation once.
     const dayLayouts: ScheduleEventLayout[][] = Array.from({ length: 6 }, () => [])
 
     visibleSections.forEach((section, sectionIndex) => {
@@ -150,6 +87,7 @@ function ScheduleGrid() {
     })
 
     dayLayouts.forEach((events, dayIndex) => {
+      // Build stable lane + overlap metadata before generating cards.
       const laidOutEvents = buildDayLayouts(events)
       laidOutEvents.forEach((event) => {
         const section = visibleSections[event.sectionIndex]
