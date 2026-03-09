@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import { motion } from 'motion/react';
 import { CourseSection } from "@/app/models/CourseSection";
 import { Schedule } from "@/app/models/Schedule";
 import { CourseColor, getCourseColor } from "@/app/utils/CourseCard";
 import { capitalize } from "@/app/utils/misc";
+import { useTheme } from "@/app/providers/useTheme";
 
 
 interface ScheduleEventCardProps {
@@ -16,24 +18,38 @@ interface ScheduleEventCardProps {
   };
 }
 function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCardProps) {
-  const isInitiallyDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  const { theme } = useTheme()
 
   // get the color pair for the event card
   const colorPair: CourseColor = getCourseColor(section.assignmentId)
 
   // useState to manage text and background colors
-  const [textColor, setTextColor] = useState<string>(isInitiallyDark ? colorPair.background : colorPair.text)
-  const [bgColor, setBgColor] = useState<string>(isInitiallyDark ? colorPair.text : colorPair.background)
+  const [textColor, setTextColor] = useState<string>(theme == "dark" ? colorPair.background : colorPair.text)
+  const [bgColor, setBgColor] = useState<string>(theme == "dark" ? colorPair.text : colorPair.background)
 
   // handle theme changes
+  /*
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     setTextColor(e.matches ? colorPair.background : colorPair.text)
     setBgColor(e.matches ? colorPair.text : colorPair.background)
   })
+  */
 
   return (
-    <div className="
-      absolute p-1 min-h-20 w-full rounded-lg border-2 text-ellipsis text-micro md:text-caption lg:text-body"
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.85, y: 16 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.85, y: -8 }}
+      transition={{
+        layout: { type: 'spring', stiffness: 300, damping: 24 },
+        duration: 0.28,
+        ease: 'easeOut'
+      }}
+      className="
+        absolute p-1 min-h-20 w-full rounded-lg border-2 text-ellipsis text-micro md:text-caption
+        lg:text-body select-none
+      "
       style={{
         top: positionStyle.top,
         height: positionStyle.height,
@@ -48,7 +64,7 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
         {section.teacher}<br />
         Tope: {section.maxStudents}
       </p>
-    </div>
+    </motion.div>
   )
 }
 

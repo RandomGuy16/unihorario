@@ -1,12 +1,12 @@
+import { AnimatePresence } from "motion/react";
+import { ReactElement, useMemo} from "react";
 import ScheduleEventCard from './ScheduleEventCard'
 import ScheduleStatusHeader from "./ScheduleStatusHeader";
-import { ReactElement, useMemo } from 'react'
 import { Schedule } from "@/app/models/Schedule";
 import { calculateECPosition } from "@/app/utils/EventCard";
 import { useCourseCache } from "@/app/providers/useCourseCache";
 import {
   buildDayLayouts,
-  DAY_TOTAL_HOURS,
   parseHourIndex,
   ScheduleEventLayout,
   getScheduleIdentityValue
@@ -147,12 +147,12 @@ function ScheduleGrid() {
           </div>
           <div className="flex flex-7 flex-row justify-evenly items-center h-full"
             id='calendar-appointments'>
-            <div className={eventsColumnStyles} id={MONDAY_ID}>{mondayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={TUESDAY_ID}>{tuesdayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={WEDNESDAY_ID}>{wednesdayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={THURSDAY_ID}>{thursdayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={FRIDAY_ID}>{fridayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={SATURDAY_ID}>{saturdayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={MONDAY_ID}><AnimatePresence>{mondayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={TUESDAY_ID}><AnimatePresence>{tuesdayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={WEDNESDAY_ID}><AnimatePresence>{wednesdayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={THURSDAY_ID}><AnimatePresence>{thursdayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={FRIDAY_ID}><AnimatePresence>{fridayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={SATURDAY_ID}><AnimatePresence>{saturdayData.eventCards}</AnimatePresence></div>
             <div className={eventsColumnStyles} id={SUNDAY_ID}></div>
           </div>
         </div>
