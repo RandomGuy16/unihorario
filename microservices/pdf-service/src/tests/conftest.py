@@ -47,9 +47,6 @@ async def session(engine):
         await db_session.commit()
         yield db_session
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
 
 @pytest_asyncio.fixture
 async def pdf_bytes():
