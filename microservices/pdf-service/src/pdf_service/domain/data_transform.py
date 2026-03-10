@@ -2,6 +2,7 @@ import json
 import pathlib as path
 import pdfplumber
 import os
+from collections import deque
 from pdf_service.core.config import PDF_DIR_PATH, CAREERS_DIR_PATH, CATALOG_DIR_PATH
 from pdf_service.core.logger import logger
 from pdf_service.domain.models import CareerCurriculumMetadata, CareerCurriculum, Year, Cycle, CourseSection, Schedule, \
@@ -49,7 +50,7 @@ def create_catalog_from_university_curriculum(curriculum: UniversityCurriculum):
             # Use metadata as the catalog source of truth.
             career_name = career.metadata.school
             study_plan = career.metadata.studyPlan
-            cycles = [cycle.cycle for cycle in career.cycles]
+            cycles: List[str] = [cycle.cycle for cycle in career.cycles]
 
             if career_name not in catalog.careers:
                 catalog.careers[career_name] = CatalogCareerData(
@@ -166,6 +167,14 @@ def _parser_bundle_tables(pdf_file: pdfplumber.PDF):
 
     return full_tables
 
+def _parser_get_cycles(pdf_file: pdfplumber.PDF):
+    cycles = deque()
+    for page in pdf_file.pages:
+        for line in page.extract_text().split('\n'):
+            if "CICLO" in line:
+                cycles.append(line)
+    return cycles
+
 
 def _write_json(json_file: path.Path, career: UniversityCurriculum):
     """Persist a curriculum to disk in the careers directory.
@@ -270,6 +279,7 @@ def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
     with pdfplumber.open(pdf_file) as pdf:
         metadata = _parser_read_metadata(pdf)
         full_tables = _parser_bundle_tables(pdf)
+        cycles = _parser_get_cycles(pdf)
         career_curriculums = CareerCurriculum(
             metadata=metadata,
             cycles=[]
@@ -284,7 +294,7 @@ def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
         section_n: int = 1
 
         for i, table in enumerate(full_tables):
-            curr_cycle = Cycle(cycle=f"CICLO {i + 1}", courseSections=[])
+            curr_cycle = Cycle(cycle=cycles.popleft(), courseSections=[])
             for row in table[1:]:
                 # determine section number by repetitions of same course in same cycle
                 if not row[0]:
@@ -315,9 +325,11 @@ def main():
     """
     # convert all files in pdf/
     pdf_files = list(path.Path(PDF_DIR_PATH).glob("*.pdf"))
-    for file in pdf_files:
-        # Run the synchronous parser for each file in the directory.
-        parse_pdf_sync(file)
+    with pdfplumber.open(pdf_files[0]) as pdf:
+        metadata = _parser_read_metadata(pdf)
+        print(metadata)
+        for page in pdf.pages:
+            print(page.extract_text())
 
 
 if __name__ == '__main__':
