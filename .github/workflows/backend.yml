@@ -1,0 +1,91 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'microservices/pdf-service/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'microservices/pdf-service/**'
+      - '.github/workflows/backend.yml'
+
+defaults:
+  run:
+    working-directory: microservices/pdf-service
+
+jobs:
+  ci:
+    name: Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: unihorario_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: latest
+          enable-cache: true
+          cache-dependency-glob: microservices/pdf-service/uv.lock
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: microservices/pdf-service/.python-version
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run Alembic migrations
+        run: uv run alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/unihorario_test
+
+      - name: Run tests
+        run: uv run pytest src/tests/ -v
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/unihorario_test
+          TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/unihorario_test
+
+  deploy:
+    name: Deploy to Heroku
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.13.15
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          appdir: microservices/pdf-service

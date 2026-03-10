@@ -112,9 +112,6 @@ async def session(engine):
         await session.commit()
         yield session
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
 
 @pytest.mark.asyncio
 async def test_sql_university_curriculum_repository_save_and_get_by_school(session):
