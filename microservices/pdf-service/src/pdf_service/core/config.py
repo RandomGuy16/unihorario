@@ -27,8 +27,8 @@ dotenv.load_dotenv(dotenv_path=DOTENV_PATH, verbose=True, override=False)
 
 CAREERS_DIR = os.getenv("CAREERS_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="CAREERS_DIR") or "out/careers"
 CATALOG_DIR = os.getenv("CATALOG_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="CATALOG_DIR") or "out/catalog"
-PDF_DIR = os.getenv("PDF_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="PDF_DIR") or "pdf"
 TESTS_DIR = os.getenv("TESTS_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="TESTS_DIR") or "tests"
+PDF_DIR = os.getenv("PDF_DIR") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="PDF_DIR") or f"{TESTS_DIR}/fixtures"
 DATABASE_URL = os.getenv("DATABASE_URL") or dotenv.get_key(dotenv_path=DOTENV_PATH, key_to_get="DATABASE_URL")
 if not DATABASE_URL:
     DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/app"
