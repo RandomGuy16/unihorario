@@ -54,7 +54,6 @@ function useCatalogLoader() {
 
   const loadData = useCallback(async () => {
     await _handleFetch(() => CatalogService.fetchCatalog())
-      // console.log("UseCatalogLoader::fetch: ", data)
   }, [_handleFetch])
 
   const awaitDataRefresh = useCallback(async (catalogRefreshJobId: string) => {

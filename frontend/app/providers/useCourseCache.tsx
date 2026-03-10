@@ -110,8 +110,6 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   // useEffect block that updates the courses when the registry changes
   useEffect(() => {
     if (courseRegistry && courseRegistry.size > 0) {
-      // console.log("CourseCacheContextProvider: Updating courses from registry")
-      // this function instead of replacing the current map of courses, extends it
       setAllCourses(prev => {
         const temp = new Map(prev)
         courseRegistry.forEach((course, key) => {
