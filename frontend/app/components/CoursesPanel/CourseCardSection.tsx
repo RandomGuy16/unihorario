@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react'
 import { CourseSection } from "@/app/models/CourseSection";
 import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
@@ -96,15 +97,27 @@ export default function CourseCardSection({ course, section, colorPair }: Course
           checked={isSelected}
           onChange={handleClick}
         />
-        <div>
-          Secci&oacute;n {section.sectionNumber}<br />Profesor: {section.teacher}<br />Tope de alumnos: {section.maxStudents}
-          {section.schedules.map((schedule, index) => (
-            <span
-              key={`${index} ${schedule.scheduleNumber}`}>
-              <br />
-              {schedule.day} {schedule.start} - {schedule.end}
-            </span>
-          ))}
+        <div className="w-full">
+          Secci&oacute;n {section.sectionNumber}<br />
+          <div className="flex flex-row justify-between items-center gap-2 w-full">
+            <span>Profesor: {section.teacher}</span>
+            <a
+              target="_blank"
+              href="https://peru.misprofesores.com/escuelas/Universidad-Nacional-de-San-Marcos_1135"
+              title="Buscar en misprofesores.com"
+              className="group text-label hover:text-body font-bold transition-colors duration-200"
+            >
+              <Search className="h-4 w-4 transition-all duration-200 ease-out filter drop-shadow-[0_0_4px_rgba(255,255,255,0.25)] group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]" />
+            </a>
+          </div>
+            Tope de alumnos: {section.maxStudents}
+            {section.schedules.map((schedule, index) => (
+              <span
+                key={`${index} ${schedule.scheduleNumber}`}>
+                <br />
+                {schedule.day} {schedule.start} - {schedule.end}
+              </span>
+            ))}
         </div>
       </label>
     </div>
