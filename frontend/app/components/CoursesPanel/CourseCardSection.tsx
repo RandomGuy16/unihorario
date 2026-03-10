@@ -11,20 +11,27 @@ interface CourseCardCheckboxProps {
   course: Course;
   section: CourseSection;
   colorPair: CourseColor;
-  checked: boolean;
-  setAllChecked: (val: boolean) => void;
 }
 
-export default function CourseCardSection({ course, section, colorPair, checked, setAllChecked }: CourseCardCheckboxProps) {
-  const { renderSections, hideSections, previewSections } = useCourseCache()
+function withAlpha(hexColor: string, alpha: string): string {
+  return hexColor.length === 9 ? `${hexColor.slice(0, 7)}${alpha}` : `${hexColor}${alpha}`
+}
+
+export default function CourseCardSection({ course, section, colorPair }: CourseCardCheckboxProps) {
+  const { renderSections, hideSections, previewSections, selectedSections } = useCourseCache()
+  const isSelected = selectedSections.has(section)
+  const isPreviewed = previewSections.has(section)
+  const isPreviewedAndSelected = isSelected && isPreviewed
+
   // function to handle the click event of the checkbox
   const handleClick = () => {
     // if is not checked: not added -> add the course now
-    if (!checked) renderSections(section, course)
-    else hideSections(section, course)
-
-    // trigger the re-render of the course card
-    setAllChecked(course.areAllSectionsSelected())
+    if (!isSelected) {
+      renderSections(section, course)
+    }
+    else {
+      hideSections(section, course)
+    }
   }
 
   const handleMouseEnter = () => {
@@ -36,34 +43,33 @@ export default function CourseCardSection({ course, section, colorPair, checked,
     hideSections(section, course, true)
   }
 
-  const isPreviewed = previewSections.has(section)
-  const isPreviewedAndSelected = isPreviewed && checked
-
-  const buttonTextColor = isPreviewedAndSelected
+  const buttonTextColor = isPreviewedAndSelected || isSelected
     ? colorPair.background
-    : checked
-      ? colorPair.background
-      : colorPair.text
+    : colorPair.text
 
   const buttonBackgroundColor = isPreviewedAndSelected
-    ? `${colorPair.text}F0`
-    : isPreviewed
-      ? `${colorPair.background}66`
-      : checked
-        ? colorPair.text
+    ? withAlpha(colorPair.text, "F5")
+    : isSelected
+      ? colorPair.text
+      : isPreviewed
+        ? withAlpha(colorPair.background, "8A")
         : colorPair.background
 
   const buttonBorderColor = isPreviewedAndSelected
-    ? `${colorPair.text}`
-    : isPreviewed
-      ? `${colorPair.text}99`
-      : colorPair.text
+    ? colorPair.text
+    : isSelected
+      ? colorPair.text
+      : isPreviewed
+        ? withAlpha(colorPair.text, "B3")
+        : colorPair.text
 
   const buttonShadow = isPreviewedAndSelected
-    ? `0 0 0 1px ${colorPair.background}40, 0 10px 24px ${colorPair.text}33`
+    ? `0 0 0 1px ${withAlpha(colorPair.background, "4D")}, 0 12px 28px ${withAlpha(colorPair.text, "38")}`
     : isPreviewed
-      ? `0 10px 24px ${colorPair.text}18`
-      : undefined
+      ? `0 8px 18px ${withAlpha(colorPair.text, "22")}`
+      : isSelected
+        ? `0 6px 14px ${withAlpha(colorPair.text, "22")}`
+        : undefined
 
   // valuable comment: checked is the local state of the checkbox, initialized in the course object
   return (
@@ -77,7 +83,7 @@ export default function CourseCardSection({ course, section, colorPair, checked,
         color: buttonTextColor,
         backgroundColor: buttonBackgroundColor,
         boxShadow: buttonShadow,
-        opacity: isPreviewed && !checked ? 0.72 : 1
+        opacity: isPreviewed && !isSelected ? 0.9 : 1
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -87,7 +93,7 @@ export default function CourseCardSection({ course, section, colorPair, checked,
         <input
           className="hidden"
           type="checkbox"
-          checked={checked}
+          checked={isSelected}
           onChange={handleClick}
         />
         <div>

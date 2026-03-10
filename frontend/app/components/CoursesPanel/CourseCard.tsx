@@ -12,10 +12,14 @@ interface CourseCardCheckboxAllProps {
   course: Course;
   colorPair: CourseColor;
   checked: boolean;
-  setAllChecked: (val: boolean) => void;
 }
-function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: CourseCardCheckboxAllProps) {
-  const { renderSections, hideSections } = useCourseCache()
+
+function withAlpha(hexColor: string, alpha: string): string {
+  return hexColor.length === 9 ? `${hexColor.slice(0, 7)}${alpha}` : `${hexColor}${alpha}`
+}
+
+function CourseCardCheckboxAll({ course, colorPair, checked }: CourseCardCheckboxAllProps) {
+  const { renderSections, hideSections, previewSections } = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
     if (!checked) {
@@ -25,12 +29,54 @@ function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: Co
       // update the global trackers
       hideSections(course.getSections(), course)
     }
-    // setChecked runs at last because it takes a moment to update its value
-    setAllChecked(!checked)
+  }
+  const handleMouseEnter = () => {
+    // just show the sections in a manner that they don't feel already selected
+    renderSections(course.getSections(), course, true)
+  }
+  const handleMouseLeave = () => {
+    // like previously said but inverted
+    hideSections(course.getSections(), course, true)
   }
 
+  const courseSections = course.getSections()
+  const hasPreviewedSections = courseSections.some((section) => previewSections.has(section))
+  const isPreviewedAndSelected = hasPreviewedSections && checked
+
+  const buttonTextColor = isPreviewedAndSelected || checked
+    ? colorPair.background
+    : colorPair.text
+
+  const buttonBackgroundColor = isPreviewedAndSelected
+    ? withAlpha(colorPair.text, "F5")
+    : checked
+      ? colorPair.text
+      : hasPreviewedSections
+        ? withAlpha(colorPair.background, "8A")
+        : colorPair.background
+
+  const buttonBorderColor = isPreviewedAndSelected
+    ? colorPair.text
+    : checked
+      ? colorPair.text
+      : hasPreviewedSections
+        ? withAlpha(colorPair.text, "B3")
+        : colorPair.text
+
+  const buttonShadow = isPreviewedAndSelected
+    ? `0 0 0 1px ${withAlpha(colorPair.background, "4D")}, 0 12px 28px ${withAlpha(colorPair.text, "38")}`
+    : hasPreviewedSections
+      ? `0 8px 18px ${withAlpha(colorPair.text, "22")}`
+      : checked
+        ? `0 6px 14px ${withAlpha(colorPair.text, "22")}`
+        : undefined
+
   return (
-    <div className="flex flex-row justify-start items-center">
+    <div
+      className="flex flex-row justify-start items-center"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <label
         className={
           `py-1 px-2 mr-1 font-normal text-micro sm:text-caption lg:text-body duration-100 ease-linear select-none
@@ -38,9 +84,12 @@ function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: Co
         }
         data-checked={checked}
         style={{
-          borderColor: colorPair.text,
-          color: `${checked ? colorPair.background : colorPair.text}`,
-          backgroundColor: `${checked ? colorPair.text : colorPair.background}`
+          borderColor: buttonBorderColor,
+          borderStyle: isPreviewedAndSelected ? 'dashed' : 'solid',
+          color: buttonTextColor,
+          backgroundColor: buttonBackgroundColor,
+          boxShadow: buttonShadow,
+          opacity: hasPreviewedSections && !checked ? 0.9 : 1
         }}>
         <input
           className="hidden"
@@ -67,14 +116,14 @@ interface CourseCardProps {
  */
 function CourseCard({ course, colorPair }: CourseCardProps) {
   const { theme } = useTheme()
-  const { setCourseInvisible, setCourseVisible } = useCourseCache()
+  const { setCourseInvisible, setCourseVisible, selectedSections } = useCourseCache()
 
   // state variable to switch the dropdown menu
   const [isOpen, setIsOpen] = useState(false)
 
   // set to track locally selected sections (per course)
-  const [areAllChecked, setAreAllChecked] = useState(course.areAllSectionsSelected())
   const [isCourseVisible, setIsCourseVisible] = useState(course.getVisibility())
+  const areAllChecked = course.getSections().every(section => selectedSections.has(section))
 
   const textColor = theme === 'dark'
     ? `${colorPair.background}${isCourseVisible ? "FF" : "AA"}`
@@ -131,8 +180,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
                   background: bgColor,
                   text: textColor
                 }}
-                checked={areAllChecked}
-                setAllChecked={setAreAllChecked}>
+                checked={areAllChecked}>
               </CourseCardCheckboxAll>
             </div>
             {/* </button> */}
@@ -162,8 +210,6 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
                   background: bgColor,
                   text: textColor
                 }}
-                checked={course.isSectionSelected(section) || areAllChecked}
-                setAllChecked={setAreAllChecked}
                 section={section}>
               </CourseCardSection>
             )}
