@@ -15,15 +15,15 @@ interface CourseCardCheckboxAllProps {
   setAllChecked: (val: boolean) => void;
 }
 function CourseCardCheckboxAll({ course, colorPair, checked, setAllChecked }: CourseCardCheckboxAllProps) {
-  const { addSections, removeSections } = useCourseCache()
+  const { renderSections, hideSections } = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
     if (!checked) {
-      addSections(course.getSections(), course)
+      renderSections(course.getSections(), course)
     }
     else {
       // update the global trackers
-      removeSections(course.getSections(), course)
+      hideSections(course.getSections(), course)
     }
     // setChecked runs at last because it takes a moment to update its value
     setAllChecked(!checked)

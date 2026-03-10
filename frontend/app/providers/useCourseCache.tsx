@@ -15,8 +15,8 @@ export function generateCourseKey(year: string | number, id: string, name: strin
 
 // Global interface for trackers selection operations
 export interface SectionSelectionOps {
-  addSections: (sections: CourseSection | CourseSection[], course: Course) => void;
-  removeSections: (sections: CourseSection | CourseSection[], course: Course) => void;
+  renderSections: (sections: CourseSection | CourseSection[], course: Course, hover?: boolean) => void;
+  hideSections: (sections: CourseSection | CourseSection[], course: Course, hover?: boolean) => void;
   hasSection: (section: CourseSection) => boolean;
   clearSections: () => void;
   setCourseVisible: (course: Course) => void;
@@ -28,6 +28,7 @@ interface CourseCacheContextType extends SectionSelectionOps {
   allCourses: Map<string, Course>;
   selectedSections: Set<CourseSection>;
   visibleSections: Set<CourseSection>;
+  previewSections: Set<CourseSection>;
   selectedCoursesCount: number;
   getCourseInstance: (courseKey: string) => Course | undefined;
 }
@@ -40,8 +41,15 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   const { selection } = useFilters()
   const [allCourses, setAllCourses] = useState<Map<string, Course>>(() => courseRegistry || new Map<string, Course>())
   const [selectedSections, setSelectedSections] = useState<Set<CourseSection>>(new Set())
-  const [visibleSections, setVisibleSections] = useState<Set<CourseSection>>(new Set())
-  // const [selectedCoursesCount, setSelectedCoursesCount] = useState<number>(0)
+  const [previewSections, setPreviewSections] = useState<Set<CourseSection>>(new Set())
+
+  const visibleSections = useMemo(() => {
+    const next = new Set(selectedSections)
+    previewSections.forEach(section => {
+      if (section.courseVisible) next.add(section)
+    })
+    return next
+  }, [previewSections, selectedSections])
 
   // stateful inverted indexes that help with the course render list
   const coursesByCareer = useMemo(() => {
@@ -98,9 +106,6 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   const updateSelectedSections = (updater: (prev: Set<CourseSection>) => Set<CourseSection>) => {
     setSelectedSections((prev) => updater(new Set(prev)));
   }
-  const updateVisibleSections = (updater: (prev: Set<CourseSection>) => Set<CourseSection>) => {
-    setVisibleSections((prev) => updater(new Set(prev)));
-  }
 
   // useEffect block that updates the courses when the registry changes
   useEffect(() => {
@@ -126,10 +131,24 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   const getCourseList = (): Course[] => { return coursesInCourseList }
 
   // add a section
-  const addSections = (sections: CourseSection | CourseSection[], course: Course) => {
+  const renderSections = (
+    sections: CourseSection | CourseSection[], course: Course, hover?: boolean
+  ) => {
     sections = Array.isArray(sections) ? sections : [sections]
-    if (course.areAllSectionsUnselected()) addCredits(course.getCredits())
 
+    // add to the preview sections
+    if (hover) {
+      setPreviewSections(prev => {
+        const temp = new Set(prev)
+        sections.forEach(section => {
+          if (section.courseVisible) temp.add(section)
+        })
+        return temp
+      })
+      return  // and do nothing else
+    }
+    // if before selecting sections it doesn't have any selected section, add credits
+    if (course.areAllSectionsUnselected()) addCredits(course.getCredits())
     // set both sections tracker
     sections.forEach(section => {
       course.selectSection(section)
@@ -138,17 +157,23 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
       sections.forEach(section => prev.add(section))
       return prev
     })
-    updateVisibleSections((prev) => {
-      sections.forEach(section => {
-        if (section.courseVisible) prev.add(section)
-      })
-      return prev
-    })
   }
 
   // remove a section from both the selected and visible sections
-  const removeSections = (sections: CourseSection | CourseSection[], course: Course) => {
+  const hideSections = (
+    sections: CourseSection | CourseSection[], course: Course, hover?: boolean
+  ) => {
     sections = Array.isArray(sections) ? sections : [sections]
+
+    if (hover) {
+      // remove from the preview sections
+      setPreviewSections(prev => {
+        const temp = new Set(prev)
+        sections.forEach(section => temp.delete(section))
+        return temp
+      })
+      return  // and do nothing else
+    }
 
     sections.forEach(section => {
       course.unselectSection(section)
@@ -157,10 +182,7 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
       sections.forEach(section => prev.delete(section))
       return prev
     })
-    updateVisibleSections(prev => {
-      sections.forEach(section => prev.delete(section))
-      return prev
-    })
+    // if after removing all sections they all are unselected, remove credits
     if (course.areAllSectionsUnselected()) restCredits(course.getCredits())
   }
 
@@ -173,43 +195,36 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
       course.unselectAllSections()
     })
     // empty the sections render list
-    setVisibleSections(new Set())
     setSelectedSections(new Set())
+    setPreviewSections(new Set())
     resetCredits()
   }
 
   // functions to set the visibility of courses
   const setCourseInvisible = (course: Course) => {
-    updateVisibleSections(prev => {
-      course.getSections().forEach((section: CourseSection) => {
-        prev.delete(section)
-      })
-      return prev
-    })
-
     course.setVisibility(false)
+    // trigger a re-render with this
+    updateSelectedSections(prev => prev)
   }
   const setCourseVisible = (course: Course) => {
-    updateVisibleSections(prev => {
-      course.getSections().forEach((section: CourseSection) => {
-        if (isSectionSelected(section)) prev.add(section)
-      })
-      return prev
-    })
     course.setVisibility(true)
+    // trigger a re-render with this
+    updateSelectedSections(prev => prev)
   }
+
 
   return (
     <CourseCacheContext.Provider value={{
       allCourses: allCourses,
       selectedSections: selectedSections,
       visibleSections: visibleSections,
+      previewSections: previewSections,
       selectedCoursesCount: selectedCoursesCount,
       getCourseInstance: getCourseInstance,
       setCourseVisible: setCourseVisible,
       setCourseInvisible: setCourseInvisible,
-      addSections: addSections,
-      removeSections: removeSections,
+      renderSections: renderSections,
+      hideSections: hideSections,
       hasSection: isSectionSelected,
       clearSections: clearSections,
       getCoursesByFilters: getCourseList
