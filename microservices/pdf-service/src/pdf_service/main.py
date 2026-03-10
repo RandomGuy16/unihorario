@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
     :rtype: AsyncIterator[None]
     """
     # now initialize the connection with the database
+    logger.info("Starting PDF service")
     async with engine.begin() as conn:
         await conn.run_sync(lambda _: None)
 
@@ -52,10 +53,12 @@ async def lifespan(app: FastAPI):
     # instead of loading an ML model
     # we'll initialize the catalog service
     await app.state.catalog_service.init()
+    logger.info("PDF service startup complete", extra={"origins": origins})
 
     # before startup
     yield
     # on shutdown
+    logger.info("Shutting down PDF service")
     await engine.dispose()
 
 
@@ -103,8 +106,10 @@ async def get_career_curriculum(school: str=''):
     try:
         return await app.state.curriculum_service.get_curriculum(school=school)
     except CurriculumNotFoundError as e:
+        logger.warning("Curriculum not found", extra={"school": school})
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.exception("Unhandled error while fetching curriculum", extra={"school": school})
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/curriculum")
@@ -118,13 +123,24 @@ async def post_career_curriculum(file: UploadFile = File(...)):
     :raises HTTPException: 400 for invalid PDF shape, 500 for unexpected errors.
     """
     try:
-        logger.info(f"Received pdf upload")
+        logger.info(
+            "Received PDF upload",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
         return await app.state.curriculum_service.receive_curriculum(file.file)
     except IndexError:
+        logger.warning(
+            "Rejected invalid curriculum PDF",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
         raise HTTPException(
             status_code=400,
             detail="PDF uploaded is not an assignments programming from SUM")
     except Exception as e:
+        logger.exception(
+            "Unhandled error while receiving curriculum PDF",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -139,7 +155,7 @@ async def await_job(job_id: str):
     :raises HTTPException: 404 for unknown job id, 500 for job/runtime failures.
     """
     try:
-        logger.info(f"Awaiting job {job_id}")
+        logger.info("Awaiting job result", extra={"job_id": job_id})
         # result = await job_manager.await_job(job_id)
         result = await app.state.curriculum_service.jobs.await_job(job_id)
         return AwaitJobResponse(
@@ -147,8 +163,10 @@ async def await_job(job_id: str):
             result=result
         )
     except KeyError:
+        logger.warning("Requested unknown job", extra={"job_id": job_id})
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     except Exception as e:
+        logger.exception("Unhandled error while awaiting job", extra={"job_id": job_id})
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/jobs/await_tree/{job_id}")
@@ -162,7 +180,7 @@ async def await_tree(job_id: str):
     :raises HTTPException: 404 for unknown job id, 500 for job/runtime failures.
     """
     try:
-        logger.info(f"Awaiting tree, root: {job_id}")
+        logger.info("Awaiting job tree", extra={"job_id": job_id})
         results = await app.state.job_manager.await_tree(job_id)
         return AwaitTreeResponse(
             success=True,
@@ -170,6 +188,8 @@ async def await_tree(job_id: str):
             jobIds=[result[0] for result in results]
         )
     except KeyError:
+        logger.warning("Requested unknown job tree", extra={"job_id": job_id})
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     except Exception as e:
+        logger.exception("Unhandled error while awaiting job tree", extra={"job_id": job_id})
         raise HTTPException(status_code=500, detail=str(e))

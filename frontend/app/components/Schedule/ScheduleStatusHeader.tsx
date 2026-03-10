@@ -5,6 +5,7 @@ import { Schedule } from "@/app/models/Schedule";
 import { capitalize } from "@/app/utils/misc";
 import { useCourseCache } from "@/app/providers/useCourseCache";
 import { useCredits } from "@/app/providers/useCredits";
+import { logger } from "@/app/utils/logger";
 
 
 // Represents a time slot with start and end times
@@ -82,7 +83,7 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
       link.download = 'schedule.png'
       link.click()
     } catch (error) {
-      console.error("error exporting image:", error)
+      logger.error("Failed to export schedule image", error)
     }
   }
 
@@ -131,7 +132,7 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
       anchor.click()
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error("error exporting to excel:", error)
+      logger.error("Failed to export schedule workbook", error)
     }
   }
 

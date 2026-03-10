@@ -3,7 +3,6 @@ import { Course } from "@/app/models/Course";
 import { generateCourseKey } from "@/app/providers/useCourseCache";
 import { AwaitJobResponse, SubmitCurriculumResponse } from "@/app/models/dto";
 
-
 export const CurriculumService = {
   /**
    * This function loads the JSON data from the server and formats it.
@@ -25,8 +24,6 @@ export const CurriculumService = {
     const registry = new Map<string, Course>()
     const careers = data.years
       .flatMap(y => y.careerCurriculums)
-
-    console.log("createCourseRegistry::careers: ", careers)
 
     // iterate over all courses in the cycle
     for (const career of careers) {

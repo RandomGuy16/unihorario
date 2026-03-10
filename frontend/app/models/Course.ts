@@ -1,4 +1,5 @@
 import { CourseSection } from "@/app/models/CourseSection";
+import { logger } from "@/app/utils/logger";
 
 export class Course {
   private readonly id: string;
@@ -35,9 +36,13 @@ export class Course {
   }
 
   selectSection(section: CourseSection) {
-    if (!this.sections.has(section)) console.warn(
-      `Trying to select a section that is not part of the course ${this.name} (${this.id})`
-    )
+    if (!this.sections.has(section)) {
+      logger.warn("Trying to select a section that is not part of the course", {
+        courseId: this.id,
+        courseName: this.name,
+        sectionNumber: section.sectionNumber
+      })
+    }
     this.selectedSections.add(section)
   }
 

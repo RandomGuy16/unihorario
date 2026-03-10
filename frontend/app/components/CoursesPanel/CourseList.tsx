@@ -46,11 +46,7 @@ function CourseList() {
     if (allCourses.size === 0) return []
     return getCoursesByFilters(selection)
   }, [allCourses, selection, getCoursesByFilters])
-  /*
-  useEffect(() => {
-    console.log("CourseList::coursesToRender: ", coursesToRender)
-  }, [coursesToRender])
-  */
+
   return (
     <div className={`
       w-full h-full mx-auto p-4 rounded-r-lg flex flex-col justify-start items-stretch

@@ -25,7 +25,6 @@ function curriculumReducer(state: CurriculumState, action: CurriculumAction) {
     case "FETCH_START":
       return {...state, loading: true, error: null}
     case "FETCH_SUCCESS":
-      console.log("CurriculumReducer::FETCH_SUCCESS::action.payload: ", action.payload)
       const registry = CurriculumService.createCourseRegistry(action.payload)
       return {
         ...state,

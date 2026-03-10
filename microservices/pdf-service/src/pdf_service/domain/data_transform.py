@@ -112,7 +112,7 @@ def _parser_read_metadata(pdf_file: pdfplumber.PDF):
             datePrinted=meta_lines[5]
         )
     except Exception:
-        logger.exception(f"Exception ocurred during metadata extraction from file")
+        logger.exception("Metadata extraction failed")
         raise
 
 
@@ -276,6 +276,7 @@ def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
     :rtype: UniversityCurriculum
     """
     out: UniversityCurriculum = UniversityCurriculum(years=[])
+    logger.info("Parsing PDF synchronously", extra={"pdf_file": str(pdf_file)})
     with pdfplumber.open(pdf_file) as pdf:
         metadata = _parser_read_metadata(pdf)
         full_tables = _parser_bundle_tables(pdf)
@@ -311,6 +312,14 @@ def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
             out.years[-1].careerCurriculums[-1].cycles.append(curr_cycle)
 
     # parser is intentionally pure and returns the value to be persisted by the DB layer
+    logger.info(
+        "Parsed curriculum from PDF",
+        extra={
+            "school": metadata.school,
+            "study_plan": metadata.studyPlan,
+            "cycle_count": len(out.years[-1].careerCurriculums[-1].cycles)
+        }
+    )
     return out
 
 
@@ -325,11 +334,14 @@ def main():
     """
     # convert all files in pdf/
     pdf_files = list(path.Path(PDF_DIR_PATH).glob("*.pdf"))
-    with pdfplumber.open(pdf_files[0]) as pdf:
-        metadata = _parser_read_metadata(pdf)
-        print(metadata)
-        for page in pdf.pages:
-            print(page.extract_text())
+    if not pdf_files:
+        logger.info("No PDF fixtures found", extra={"pdf_dir": str(PDF_DIR_PATH)})
+        return
+    parsed = parse_pdf_sync(pdf_files[0])
+    logger.info(
+        "Parsed sample PDF from CLI helper",
+        extra={"school": parsed.years[0].careerCurriculums[0].metadata.school}
+    )
 
 
 if __name__ == '__main__':
