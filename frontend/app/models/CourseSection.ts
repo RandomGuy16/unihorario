@@ -18,4 +18,5 @@ export interface CourseSection {
   credits      : Credits;
   maxStudents  : MaxStudents;
   courseVisible: CourseVisibility;  // its parent course visibility
+  isPreviewHovered    : boolean;  // new parameter to allow hovering a course section and see its schedules in the grid
 }

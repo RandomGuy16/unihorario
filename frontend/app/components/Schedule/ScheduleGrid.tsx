@@ -1,12 +1,12 @@
+import { AnimatePresence } from "motion/react";
+import { ReactElement, useMemo} from "react";
 import ScheduleEventCard from './ScheduleEventCard'
 import ScheduleStatusHeader from "./ScheduleStatusHeader";
-import { ReactElement, useMemo } from 'react'
 import { Schedule } from "@/app/models/Schedule";
 import { calculateECPosition } from "@/app/utils/EventCard";
 import { useCourseCache } from "@/app/providers/useCourseCache";
 import {
   buildDayLayouts,
-  DAY_TOTAL_HOURS,
   parseHourIndex,
   ScheduleEventLayout,
   getScheduleIdentityValue
@@ -44,15 +44,15 @@ interface DayData {
 
 // element for the calendar grid
 function ScheduleGrid() {
-  const { selectedSections } = useCourseCache()
+  const { visibleSections } = useCourseCache()
 
-  const visibleSections = useMemo(
-    () => Array.from(selectedSections)
+  const sectionsToRender = useMemo(
+    () => Array.from(visibleSections)
       .filter((section) => section.courseVisible)
       .sort((left, right) =>
         left.sectionNumber - right.sectionNumber
       ),
-    [selectedSections]
+    [visibleSections]
   )
 
   const filteredData = useMemo(() => {
@@ -65,7 +65,7 @@ function ScheduleGrid() {
     // Keep a per-day staging list so we can run deterministic lane allocation once.
     const dayLayouts: ScheduleEventLayout[][] = Array.from({ length: 6 }, () => [])
 
-    visibleSections.forEach((section, sectionIndex) => {
+    sectionsToRender.forEach((section, sectionIndex) => {
       section.schedules.forEach((schedule) => {
         const dayIndex = DAYS_MAP[schedule.day.toUpperCase() as DayKey]
         if (dayIndex === undefined) return
@@ -90,7 +90,7 @@ function ScheduleGrid() {
       // Build stable lane + overlap metadata before generating cards.
       const laidOutEvents = buildDayLayouts(events)
       laidOutEvents.forEach((event) => {
-        const section = visibleSections[event.sectionIndex]
+        const section = sectionsToRender[event.sectionIndex]
         if (!section) return
         const eventCard = (<ScheduleEventCard
           key={getScheduleIdentityValue(event.schedule)}
@@ -102,7 +102,7 @@ function ScheduleGrid() {
       })
     })
     return daysData
-  }, [visibleSections])
+  }, [sectionsToRender])
 
   // Lists to store the schedules of each day
   const mondayData = filteredData[0]
@@ -147,12 +147,12 @@ function ScheduleGrid() {
           </div>
           <div className="flex flex-7 flex-row justify-evenly items-center h-full"
             id='calendar-appointments'>
-            <div className={eventsColumnStyles} id={MONDAY_ID}>{mondayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={TUESDAY_ID}>{tuesdayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={WEDNESDAY_ID}>{wednesdayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={THURSDAY_ID}>{thursdayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={FRIDAY_ID}>{fridayData.eventCards}</div>
-            <div className={eventsColumnStyles} id={SATURDAY_ID}>{saturdayData.eventCards}</div>
+            <div className={eventsColumnStyles} id={MONDAY_ID}><AnimatePresence>{mondayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={TUESDAY_ID}><AnimatePresence>{tuesdayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={WEDNESDAY_ID}><AnimatePresence>{wednesdayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={THURSDAY_ID}><AnimatePresence>{thursdayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={FRIDAY_ID}><AnimatePresence>{fridayData.eventCards}</AnimatePresence></div>
+            <div className={eventsColumnStyles} id={SATURDAY_ID}><AnimatePresence>{saturdayData.eventCards}</AnimatePresence></div>
             <div className={eventsColumnStyles} id={SUNDAY_ID}></div>
           </div>
         </div>
