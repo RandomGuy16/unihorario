@@ -1,7 +1,8 @@
 import asyncio
-import tempfile
 from datetime import datetime, timezone
+from time import perf_counter
 import pathlib as path
+from io import BytesIO
 from enum import Enum
 from itertools import chain
 from typing import Dict, BinaryIO, Optional, Any, Callable, Coroutine
@@ -54,13 +55,31 @@ async def _runner(info: JobInfo, coro: Coroutine[Any, Any, Any]) -> None:
     """
     info.status = JobStatus.RUNNING
     info.started_at = datetime.now(timezone.utc)
+    started_at = perf_counter()
+    logger.info("Job started", extra={"job_id": info.job_id, "kind": info.kind})
     try:
         info.result = await coro
         info.status = JobStatus.SUCCEEDED
+        logger.info(
+            "Job completed successfully",
+            extra={
+                "job_id": info.job_id,
+                "kind": info.kind,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2)
+            }
+        )
         return info.result
     except Exception as e:
         info.status = JobStatus.FAILED
         info.error = f"{type(e).__name__}: {e}"
+        logger.exception(
+            "Job failed",
+            extra={
+                "job_id": info.job_id,
+                "kind": info.kind,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2)
+            }
+        )
         raise
     finally:
         info.finished_at = datetime.now(timezone.utc)
@@ -119,15 +138,12 @@ class JobManager:
         # since the submitting logic is inside a lot of helpers
         # this job event is needed
         self._job_events[job_id] = asyncio.Event()
-        logger.debug(job_id)
-        logger.info(self._job_events[job_id])
 
         # start the task
         task                = asyncio.create_task(_runner(info, coro))
         self._tasks[job_id] = task
         self._on_job_added(job_id)
-        logger.info(self._job_events[job_id])
-        logger.info(f"Job ({kind}) submitted successfully, running in thread now.")
+        logger.info("Job submitted", extra={"job_id": job_id, "kind": kind})
         return job_id
 
     def submit_child(self, parent_job_id: str, kind: str, coro: Coroutine[Any, Any, Any]) -> str:
@@ -190,14 +206,20 @@ class JobManager:
             try:
                 task.result()  # this will raise if the parent failed
                 self._start_reserved(child_job_id, coro_factory())
-                logger.info(f"Child job ({kind}) scheduled after parent job finishes")
+                logger.info(
+                    "Child job scheduled after parent completion",
+                    extra={"job_id": child_job_id, "kind": kind, "parent_job_id": parent_job_id}
+                )
             except asyncio.CancelledError as e:
                 if child_info:
                     child_info.status = JobStatus.CANCELLED
                     child_info.error = f"ParentFailed({type(e).__name__}): {e}"
                     child_info.finished_at = datetime.now(timezone.utc)
                 self._start_reserved(child_job_id, _raise_parent_failure(e))
-                logger.exception("Error occurred during parent job execution: child job not started")
+                logger.exception(
+                    "Parent job was cancelled before child could start",
+                    extra={"job_id": child_job_id, "kind": kind, "parent_job_id": parent_job_id}
+                )
             except Exception as e:
                 # if in any case the parent job doesnt get cancelled and fails naturally
                 # set the info to the children and elevate the error
@@ -205,8 +227,10 @@ class JobManager:
                     child_info.error = f"ParentFailed({type(e).__name__}): {e}"
                     child_info.finished_at = datetime.now(timezone.utc)
                 self._start_reserved(child_job_id, _raise_parent_failure(e))
-                logger.exception("Error occurred during child job execution")
-                # logger.exception(f"{e.__class__.__name__}: {e}")
+                logger.exception(
+                    "Parent job failed; child job marked as failed",
+                    extra={"job_id": child_job_id, "kind": kind, "parent_job_id": parent_job_id}
+                )
         parent_job.add_done_callback(_enqueue_child)
         return child_job_id
 
@@ -286,8 +310,8 @@ class JobManager:
             # this important line unpacks self.await_tree(child), because it returns a tuple of pairs
             all_children_pairs = tuple(chain.from_iterable(children_results))
             return ((parent_info.job_id, result),) + all_children_pairs
-        except Exception as e:
-            logger.exception(f"Error occurred during tree job execution: {e}")
+        except Exception:
+            logger.exception("Error while awaiting job tree", extra={"job_id": job_id})
             raise
 
 
@@ -340,6 +364,7 @@ class CatalogService:
         Initializes the service by loading the catalog data.
         """
         # Startup of the service from the main app
+        logger.info("Initializing catalog service")
         await self.refresh_catalog()
 
     async def get_catalog(self):
@@ -384,9 +409,17 @@ class CatalogService:
         :return: The updated Catalog object.
         """
         async with self._refresh_lock:
+            started_at = perf_counter()
             async with self.uow_factory() as uow:
                 await self.build_catalog()
                 self.data = await uow.catalogs.get()
+            logger.info(
+                "Catalog refresh complete",
+                extra={
+                    "career_count": len(self.data.careers),
+                    "duration_ms": round((perf_counter() - started_at) * 1000, 2)
+                }
+            )
         return self.data
 
     def refresh_catalog_in_background(self) -> str:
@@ -405,9 +438,13 @@ class CatalogService:
         """
         async with self.uow_factory() as uow:
             curriculum = await uow.curriculums.get()
+            if curriculum is None:
+                logger.info("Skipped catalog build because no curriculum data is stored")
+                return
             catalog = create_catalog_from_university_curriculum(curriculum)
             for _, career in catalog.careers.items():
                 await uow.catalogs.save(career)
+            logger.info("Built catalog snapshot", extra={"career_count": len(catalog.careers)})
 
 
     def has_career(self, career: str):
@@ -450,6 +487,7 @@ class CurriculumService:
             curriculum: UniversityCurriculum
             if job_id:
                 # await for the background job result
+                logger.info("Resolving curriculum from job", extra={"job_id": job_id, "school": school})
                 curriculum = await self.jobs.await_job(job_id)
             else:
                 # if there's no job_id, just read without any problems... I hope so
@@ -458,6 +496,7 @@ class CurriculumService:
 
             if not curriculum:
                 raise CurriculumNotFoundError(school=school)
+            logger.info("Loaded curriculum", extra={"school": school, "year_count": len(curriculum.years)})
             return curriculum
 
 
@@ -477,10 +516,20 @@ class CurriculumService:
         :param pdf_file: The path or binary content of the PDF file.
         :return: The parsed UniversityCurriculum.
         """
+        started_at = perf_counter()
+        logger.info("Starting PDF parse", extra={"pdf_file": str(pdf_file)})
         result: UniversityCurriculum = await asyncio.to_thread(parse_pdf_sync, pdf_file)
         # send the result to the database
         async with self.uow_factory() as uow:
             await uow.curriculums.save(result)
+        logger.info(
+            "Persisted parsed curriculum",
+            extra={
+                "pdf_file": str(pdf_file),
+                "year_count": len(result.years),
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2)
+            }
+        )
 
         return result
 
@@ -506,16 +555,22 @@ class CurriculumService:
         :return: A CreateCurriculumResponse containing metadata and the parse job ID.
         :raises RuntimeError: If the parse job submission fails.
         """
-        # always open these files in a temporary file
-        # and never from the request stream in a background task
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
-            tmp_pdf.write(pdf.read())  # write the file
-            tmp_path = path.Path(tmp_pdf.name)
+        pdf_bytes = pdf.read()
+        pdf_size_bytes = len(pdf_bytes)
+        logger.info("Read uploaded PDF into memory", extra={"pdf_size_bytes": pdf_size_bytes})
         # read the metadata, this is kinda fast compared to parsing the whole file
-        metadata     = await self.get_curriculum_metadata(path.Path(tmp_path))
+        metadata = await self.get_curriculum_metadata(BytesIO(pdf_bytes))
+        logger.info(
+            "Extracted curriculum metadata",
+            extra={
+                "school": metadata.school,
+                "study_plan": metadata.studyPlan,
+                "academic_period": metadata.academicPeriod
+            }
+        )
         parse_job_id = self.jobs.submit(
             kind="curriculum.parse_pdf",
-            coro=self.parse_pdf(tmp_path)
+            coro=self.parse_pdf(BytesIO(pdf_bytes))
         )
         if not parse_job_id:
             raise RuntimeError("Failed to submit parse job")
@@ -524,6 +579,14 @@ class CurriculumService:
             parse_job_id,
             "curriculum.catalog.refresh_catalog",
             lambda: self.catalog_service.refresh_catalog()
+        )
+        logger.info(
+            "Scheduled curriculum processing jobs",
+            extra={
+                "school": metadata.school,
+                "parse_job_id": parse_job_id,
+                "catalog_refresh_job_id": catalog_refresh_job_id
+            }
         )
         # Finally, if everything worked, return the damn curriculum response
         return CreateCurriculumResponse(
