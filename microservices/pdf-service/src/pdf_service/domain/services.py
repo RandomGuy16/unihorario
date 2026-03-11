@@ -118,6 +118,21 @@ class JobManager:
         if job_id in self._job_events:
             self._job_events[job_id].set()
 
+    def _finalize_reserved_without_task(self, job_id: str, status: JobStatus, error: str) -> None:
+        """Close a reserved child job without creating a background task.
+
+        This keeps chained jobs observable to awaiters even when the parent
+        failed before the child could start.
+        """
+        info = self.get_info(job_id)
+        if not info:
+            raise ValueError(f"Cannot finalize reserved job {job_id} because it does not exist.")
+
+        info.status = status
+        info.error = error
+        info.finished_at = datetime.now(timezone.utc)
+        self._on_job_added(job_id)
+
     def _start_reserved(self, job_id: str, coro: Coroutine[Any, Any, Any]) -> str:
         """
         Starts a coroutine for a job_id that already exists in self._jobs.
@@ -211,14 +226,6 @@ class JobManager:
         self.link_child(parent_job_id, child_job_id)
 
         def _enqueue_child(task: asyncio.Task) -> None:
-            child_info = self.get_info(child_job_id)
-            # helper to log a parent job failure and elevate it
-            async def _raise_parent_failure(parent_error: BaseException):
-                raise RuntimeError(
-                    f"Parent job {parent_job_id} failed; child job {child_job_id} not started: "
-                    f"{type(parent_error).__name__}: {parent_error}"
-                )
-
             try:
                 task.result()  # this will raise if the parent failed
                 self._start_reserved(child_job_id, coro_factory())
@@ -227,22 +234,25 @@ class JobManager:
                     extra={"job_id": child_job_id, "kind": kind, "parent_job_id": parent_job_id}
                 )
             except asyncio.CancelledError as e:
-                if child_info:
-                    child_info.status = JobStatus.CANCELLED
-                    child_info.error = f"ParentFailed({type(e).__name__}): {e}"
-                    child_info.finished_at = datetime.now(timezone.utc)
-                self._start_reserved(child_job_id, _raise_parent_failure(e))
+                # Mark the child terminal and wake awaiters without spawning a
+                # throwaway task that would only raise in the background.
+                self._finalize_reserved_without_task(
+                    child_job_id,
+                    JobStatus.CANCELLED,
+                    f"ParentFailed({type(e).__name__}): {e}"
+                )
                 logger.exception(
                     "Parent job was cancelled before child could start",
                     extra={"job_id": child_job_id, "kind": kind, "parent_job_id": parent_job_id}
                 )
             except Exception as e:
-                # if in any case the parent job doesnt get cancelled and fails naturally
-                # set the info to the children and elevate the error
-                if child_info:
-                    child_info.error = f"ParentFailed({type(e).__name__}): {e}"
-                    child_info.finished_at = datetime.now(timezone.utc)
-                self._start_reserved(child_job_id, _raise_parent_failure(e))
+                # Parent failure should still surface through await_job, but it
+                # should not leak as an unhandled background exception.
+                self._finalize_reserved_without_task(
+                    child_job_id,
+                    JobStatus.FAILED,
+                    f"ParentFailed({type(e).__name__}): {e}"
+                )
                 logger.exception(
                     "Parent job failed; child job marked as failed",
                     extra={"job_id": child_job_id, "kind": kind, "parent_job_id": parent_job_id}
@@ -297,6 +307,10 @@ class JobManager:
         # now the job should be in ._tasks
         task = self._tasks.get(job_id)
         if not task:
+            # Reserved child jobs may complete terminally without ever starting.
+            info = self.get_info(job_id)
+            if info and info.status in {JobStatus.FAILED, JobStatus.CANCELLED}:
+                raise RuntimeError(info.error or f"Job {job_id} did not start")
             raise KeyError(f"Unknown job id: {job_id}")
         return await task
 
