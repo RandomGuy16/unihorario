@@ -30,35 +30,35 @@ function SearchFilter() {
         when a select element from here changes the filters, the useEffect of CoursesPanel
         reconfigures the courses available
       */}
-      <div>
+      <div className='w-full'>
         Carrera:
         <div className="flex flex-row justify-between items-center gap-2">
           <Select
-          instanceId={"career-select"}
-          className="text-label shadow-elev-1"
-          styles={selectStyles} // Call the function
-          options={
-            availableFilters.careers.map(filterOption => ({
-              value: filterOption,
-              label: filterOption,
-            }))
-          }
-          defaultValue={{
-            label: selection.career,
-            value: selection.career
-          }}
-          value={{
-            label: selection.career,
-            value: selection.career
-          }}
-          onChange={(newValue: unknown) => {
-            updateSelection({
-              career: (newValue as selectFilterOption).value
-            })
-            // clear the sections when the career changes
-            clearSections()
-          }}>
-        </Select>
+            instanceId={"career-select"}
+            className="text-label shadow-elev-1"
+            styles={selectStyles} // Call the function
+            options={
+              availableFilters.careers.map(filterOption => ({
+                value: filterOption,
+                label: filterOption,
+              }))
+            }
+            defaultValue={{
+              label: selection.career,
+              value: selection.career
+            }}
+            value={{
+              label: selection.career,
+              value: selection.career
+            }}
+            onChange={(newValue: unknown) => {
+              updateSelection({
+                career: (newValue as selectFilterOption).value
+              })
+              // clear the sections when the career changes
+              clearSections()
+            }}>
+          </Select>
           <UploadPDFButton setOpen={setShowUploadModal} />
           <UploadCurriculumModal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} />
         </div>
