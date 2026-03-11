@@ -41,17 +41,15 @@ export const CurriculumService = {
             career.metadata.school
           )
           // if the course is already not present in the registry, create it
-          if (!registry.has(courseKey)) {
-            registry.set(courseKey, new Course(
-              section.assignmentId,
-              section.assignment,
-              section.credits,
-              Array.from(teachers),
-              career.metadata.school,
-              career.metadata.studyPlan,
-              cycle.cycle
-            ))
-          }
+          registry.set(courseKey, new Course(
+            section.assignmentId,
+            section.assignment,
+            section.credits,
+            Array.from(teachers),
+            career.metadata.school,
+            career.metadata.studyPlan,
+            cycle.cycle
+          ))
           registry.get(courseKey)!.addSection(section)
         }
       }
