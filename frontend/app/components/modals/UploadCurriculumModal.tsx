@@ -1,4 +1,4 @@
-import { useState, useEffect, ChangeEvent } from 'react';
+import { useState, useEffect, ChangeEvent, DragEvent } from 'react';
 import { Info, Upload } from 'lucide-react';
 import { useCatalog } from "@/app/providers/useCatalog";
 import { useCurriculum } from "@/app/providers/useCurriculum";
@@ -11,9 +11,9 @@ interface UploadCurriculumModalProps {
 }
 function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) {
 	const [file, setFile] = useState<File | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
 	const catalogProvider = useCatalog()
 	const curriculumProvider = useCurriculum()
-
 
 	useEffect(() => {
 		const handleEscape = (e: KeyboardEvent) => {
@@ -25,10 +25,37 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 		}
 	}, [isOpen, onClose]);
 
+	const handleSelectedFile = (selectedFile: File | null) => {
+		if (!selectedFile) return;
+
+		if (selectedFile.type !== "application/pdf" && !selectedFile.name.toLowerCase().endsWith(".pdf")) {
+			toast.error("Solo se permiten archivos PDF.");
+			return;
+		}
+
+		setFile(selectedFile);
+	};
+
 	const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.item(0)
-		if (file) setFile(file)
-	}
+		handleSelectedFile(e.target.files?.item(0) ?? null);
+	};
+
+	const handleDragOver = (e: DragEvent<HTMLLabelElement>) => {
+		e.preventDefault();
+		setIsDragging(true);
+	};
+
+	const handleDragLeave = (e: DragEvent<HTMLLabelElement>) => {
+		e.preventDefault();
+		setIsDragging(false);
+	};
+
+	const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+		e.preventDefault();
+		setIsDragging(false);
+		handleSelectedFile(e.dataTransfer.files?.item(0) ?? null);
+	};
+
 	const handleSubmit = async () => {
 		if (!file) {
 			toast.error("Selecciona un archivo antes de subirlo.")
@@ -36,19 +63,16 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 		}
 
 		try {
-			// pass control to the curriculum service
 			const submitResponse: SubmitCurriculumResponse = await toast.promise(curriculumProvider.submitCurriculum(file), {
-				// carga el archivo
 				loading: "Subiendo archivo...",
 				success: (submitResponse: SubmitCurriculumResponse) => {
 					return `Archivo cargado exitósamente: ${submitResponse.metadata.school}`
 				},
 				error: "No se pudo cargar el archivo. Intenta de nuevo."
 			}).unwrap()
-			// close the modal and wait for the next promises to complete
+
 			onClose()
 
-			// lanza notificacion de espera al procesamiento del archivo
 			await toast.promise(curriculumProvider.awaitCurriculumParsing(submitResponse.curriculumCreationJobId), {
 				loading: "Procesando programación de asignaturas",
 				success: () => "Programación de asignaturas procesada exitósamente!",
@@ -60,9 +84,6 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 				success: "Catalogo actualizado!",
 				error: "No se pudo actualizar el catalogo. Intenta de nuevo."
 			}).unwrap()
-			// await the creation of the new curriculum to refresh the courses
-			// await curriculumProvider.awaitCurriculumParsing(submitResponse.curriculumCreationJobId)
-			// await catalogProvider.awaitCatalogRefresh(submitResponse.catalogRefreshJobId)
 		} catch (error) {
 			toast.error("No se pudo subir el archivo. Intenta de nuevo.")
 		}
@@ -74,8 +95,8 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 				className="z-50 flex flex-col items-center justify-center w-3/4 md:w-1/2 lg:w-1/3 m-auto p-4
 				rounded-lg shadow-lg bg-surface text-center"
 				onClick={(e) => {
-				e.stopPropagation()
-			}}>
+					e.stopPropagation()
+				}}>
 				<section about={"upload-info"} className="flex flex-col justify-center items-center">
 					<h2 className="text-heading">Sube tu programación de asignaturas</h2>
 					<br />
@@ -97,23 +118,29 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 						<li>Sube el archivo a esta p&aacute;gina</li>
 					</ul>
 					<label
-						className="flex flex-col justify-center items-center gap-2 w-full h-32 m-4 border rounded-md border-dashed
-						border-foreground-muted/75 text-foreground-muted/75 hover:border-foreground-muted hover:text-foreground-muted
-						cursor-pointer transition duration-200 ease-in-out"
+						className={`flex flex-col justify-center items-center gap-2 w-full h-32 m-4 border rounded-md border-dashed
+						cursor-pointer transition duration-200 ease-in-out ${
+							isDragging
+								? "border-accent text-foreground bg-accent/10"
+								: "border-foreground-muted/75 text-foreground-muted/75 hover:border-foreground-muted hover:text-foreground-muted"
+						}`}
 						id="upload-label"
+						onDragOver={handleDragOver}
+						onDragLeave={handleDragLeave}
+						onDrop={handleDrop}
 					>
 						<input
 							type="file"
-							accept=".pdf" // Customize file types
+							accept=".pdf"
 							onChange={handleFileChange}
 							name={"upload-label"}
 							className="border border-gray-300 rounded p-2 w-full mb-4 hidden"
 						/>
-						<Upload className="" size={64}/>
+						<Upload size={64}/>
 						<span>
 							{file
 								? <>Archivo: {file.name}</>
-								: <>A&uacute;n no ha subido un archivo<br/>
+								: <>A&uacute;n no ha subido un archivo<br />
 									Arrastra tu archivo aca o haz click para buscarlo!</>
 							}
 						</span>
