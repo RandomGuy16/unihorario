@@ -108,5 +108,39 @@ async def test_then_parent_failure_propagates_to_child():
         await jm.await_job(parent_id)
 
     # Child should not hang forever when parent fails.
-    with pytest.raises(RuntimeError, match="Parent job"):
+    with pytest.raises(RuntimeError, match="ParentFailed"):
         await asyncio.wait_for(jm.await_job(child_id), timeout=1.0)
+
+
+@pytest.mark.asyncio
+async def test_then_parent_cancellation_marks_child_cancelled():
+    jm = JobManager()
+    parent_started = asyncio.Event()
+
+    async def parent_job():
+        parent_started.set()
+        await asyncio.sleep(10)
+
+    def child_job_factory():
+        async def child_job():
+            return "unreachable"
+        return child_job()
+
+    parent_id = jm.submit("parent", parent_job())
+    child_id = jm.then(parent_id, "child", child_job_factory)
+
+    parent_task = jm.get_task(parent_id)
+    assert parent_task is not None
+
+    await parent_started.wait()
+    parent_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await jm.await_job(parent_id)
+
+    with pytest.raises(RuntimeError, match=r"ParentFailed\(CancelledError\)"):
+        await asyncio.wait_for(jm.await_job(child_id), timeout=1.0)
+
+    child_info = jm.get_info(child_id)
+    assert child_info is not None
+    assert child_info.status == JobStatus.CANCELLED

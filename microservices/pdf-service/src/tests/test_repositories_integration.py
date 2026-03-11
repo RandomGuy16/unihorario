@@ -3,6 +3,7 @@ import os
 import pytest
 import pytest_asyncio
 from sqlalchemy import delete
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from pdf_service.domain.models import (
@@ -139,6 +140,195 @@ async def test_sql_university_curriculum_repository_list_years_for_school(sessio
     years = await repo.list_years_for_school("Computer Science")
 
     assert years == ["2021"]
+
+
+@pytest.mark.asyncio
+async def test_sql_university_curriculum_repository_save_merges_repeated_years(session):
+    repo = SqlUniversityCurriculumRepository(session)
+    first = UniversityCurriculum(
+        years=[
+            Year(
+                year="2021",
+                careerCurriculums=[
+                    CareerCurriculum(
+                        metadata=CareerCurriculumMetadata(
+                            faculty="Engineering",
+                            school="Computer Science",
+                            specialization="Software",
+                            studyPlan="2021",
+                            academicPeriod="2026-1",
+                            datePrinted="2026-02-28",
+                        ),
+                        cycles=[
+                            Cycle(
+                                cycle="CICLO 1",
+                                courseSections=[
+                                    CourseSection(
+                                        assignment="Calculus I",
+                                        assignmentId="MAT101",
+                                        sectionNumber=1,
+                                        teacher="Prof. Euler",
+                                        credits=4,
+                                        studyPlan="2021",
+                                        maxStudents=40,
+                                        courseVisible=True,
+                                        schedules=[
+                                            Schedule(
+                                                assignment="Calculus I",
+                                                assignmentId="MAT101",
+                                                day="LUN",
+                                                start="08:00",
+                                                end="10:00",
+                                                type="Teoria",
+                                                scheduleNumber=1,
+                                                sectionNumber=1,
+                                                teacher="Prof. Euler",
+                                            )
+                                        ],
+                                    )
+                                ],
+                            )
+                        ],
+                    )
+                ],
+            )
+        ]
+    )
+    second = UniversityCurriculum(
+        years=[
+            Year(
+                year="2021",
+                careerCurriculums=[
+                    CareerCurriculum(
+                        metadata=CareerCurriculumMetadata(
+                            faculty="Engineering",
+                            school="Electronics",
+                            specialization="Embedded",
+                            studyPlan="2021",
+                            academicPeriod="2026-1",
+                            datePrinted="2026-02-28",
+                        ),
+                        cycles=[
+                            Cycle(
+                                cycle="CICLO 1",
+                                courseSections=[
+                                    CourseSection(
+                                        assignment="Physics I",
+                                        assignmentId="PHY101",
+                                        sectionNumber=1,
+                                        teacher="Prof. Tesla",
+                                        credits=4,
+                                        studyPlan="2021",
+                                        maxStudents=35,
+                                        courseVisible=True,
+                                        schedules=[
+                                            Schedule(
+                                                assignment="Physics I",
+                                                assignmentId="PHY101",
+                                                day="MAR",
+                                                start="10:00",
+                                                end="12:00",
+                                                type="Teoria",
+                                                scheduleNumber=1,
+                                                sectionNumber=1,
+                                                teacher="Prof. Tesla",
+                                            )
+                                        ],
+                                    )
+                                ],
+                            )
+                        ],
+                    )
+                ],
+            )
+        ]
+    )
+
+    await repo.save(first)
+    await session.commit()
+    await repo.save(second)
+    await session.commit()
+
+    year_count = await session.scalar(select(func.count()).select_from(YearORM))
+    stored = await repo.get()
+
+    assert year_count == 1
+    assert stored is not None
+    assert len(stored.years) == 1
+    schools = {
+        career.metadata.school
+        for career in stored.years[0].careerCurriculums
+    }
+    assert schools == {"Computer Science", "Electronics"}
+
+
+@pytest.mark.asyncio
+async def test_sql_university_curriculum_repository_save_replaces_existing_career_in_same_year(session):
+    repo = SqlUniversityCurriculumRepository(session)
+    first = _sample_curriculum()
+    updated = UniversityCurriculum(
+        years=[
+            Year(
+                year="2021",
+                careerCurriculums=[
+                    CareerCurriculum(
+                        metadata=CareerCurriculumMetadata(
+                            faculty="Engineering",
+                            school="Computer Science",
+                            specialization="Software",
+                            studyPlan="2021",
+                            academicPeriod="2026-2",
+                            datePrinted="2026-03-01",
+                        ),
+                        cycles=[
+                            Cycle(
+                                cycle="CICLO 2",
+                                courseSections=[
+                                    CourseSection(
+                                        assignment="Linear Algebra",
+                                        assignmentId="MAT201",
+                                        sectionNumber=1,
+                                        teacher="Prof. Noether",
+                                        credits=4,
+                                        studyPlan="2021",
+                                        maxStudents=45,
+                                        courseVisible=True,
+                                        schedules=[
+                                            Schedule(
+                                                assignment="Linear Algebra",
+                                                assignmentId="MAT201",
+                                                day="MIE",
+                                                start="14:00",
+                                                end="16:00",
+                                                type="Teoria",
+                                                scheduleNumber=1,
+                                                sectionNumber=1,
+                                                teacher="Prof. Noether",
+                                            )
+                                        ],
+                                    )
+                                ],
+                            )
+                        ],
+                    )
+                ],
+            )
+        ]
+    )
+
+    await repo.save(first)
+    await session.commit()
+    await repo.save(updated)
+    await session.commit()
+
+    stored = await repo.get_by_school("Computer Science")
+
+    assert stored is not None
+    assert len(stored.years) == 1
+    careers = stored.years[0].careerCurriculums
+    assert len(careers) == 1
+    assert careers[0].metadata.academicPeriod == "2026-2"
+    assert careers[0].cycles[0].cycle == "CICLO 2"
 
 
 @pytest.mark.asyncio

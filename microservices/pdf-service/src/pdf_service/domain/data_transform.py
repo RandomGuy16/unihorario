@@ -234,7 +234,7 @@ def _parser_handle_row(row: List[str], section_n: int, curr_cycle: Cycle, metada
         case [str(), str(), str(), str(), str(), str(), str(), str(), str()]:
             # Full row describes a new course section.
             course_section = CourseSection(
-                assignment=row[0].split(" ")[2],
+                assignment=row[0].split(" ", 2)[2],
                 assignmentId=row[0].split(" ")[0],
                 credits=int(float(row[1])),
                 sectionNumber=section_n,
