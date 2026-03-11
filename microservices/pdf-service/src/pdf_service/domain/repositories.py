@@ -13,7 +13,6 @@ from pdf_service.domain.orm_models import (
 )
 from pdf_service.domain.mappers import (
     university_curriculum_from_orm,
-    university_curriculum_to_orm,
     catalog_from_orm,
     catalog_to_orm,
     career_curriculum_to_orm,
@@ -69,9 +68,50 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
         :return: None
         :rtype: None
         """
-        # para añadir un university curriculum se le sacan los year y estos se guardan
-        year_entities = university_curriculum_to_orm(university_curriculum)
-        self.session.add_all(year_entities)
+        for incoming_year in university_curriculum.years:
+            existing_years = (
+                await self.session.scalars(
+                    select(YearORM)
+                    .options(
+                        selectinload(YearORM.career_curriculums)
+                        .selectinload(CareerCurriculumORM.cycles)
+                        .selectinload(CycleORM.course_sections)
+                        .selectinload(CourseSectionORM.schedules)
+                    )
+                    .where(YearORM.year == incoming_year.year)
+                )
+            ).unique().all()
+
+            if not existing_years:
+                year_orm = YearORM(year=incoming_year.year)
+                year_orm.career_curriculums = [
+                    career_curriculum_to_orm(career)
+                    for career in incoming_year.careerCurriculums
+                ]
+                self.session.add(year_orm)
+                continue
+
+            existing_year = existing_years[0]
+            for duplicate_year in existing_years[1:]:
+                for duplicate_career in list(duplicate_year.career_curriculums):
+                    existing_year.career_curriculums.append(duplicate_career)
+                await self.session.delete(duplicate_year)
+
+            existing_careers = {
+                (career.school, career.study_plan): career
+                for career in existing_year.career_curriculums
+            }
+
+            for incoming_career in incoming_year.careerCurriculums:
+                career_key = (incoming_career.metadata.school, incoming_career.metadata.studyPlan)
+                previous_career = existing_careers.get(career_key)
+                if previous_career is not None:
+                    existing_year.career_curriculums.remove(previous_career)
+                    await self.session.flush()
+
+                replacement_career = career_curriculum_to_orm(incoming_career)
+                existing_year.career_curriculums.append(replacement_career)
+                existing_careers[career_key] = replacement_career
 
     async def get(self) -> UniversityCurriculum | None:
         """Fetch curriculum aggregate."""
