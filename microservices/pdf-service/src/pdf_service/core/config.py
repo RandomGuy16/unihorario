@@ -45,6 +45,11 @@ PDF_DIR_PATH = Path.joinpath(PROJECT_ROOT, PDF_DIR)
 TESTS_DIR_PATH = Path.joinpath(SRC_DIR, TESTS_DIR)
 FIXTURES_DIR_PATH = TESTS_DIR_PATH / "fixtures"
 PORT = int(os.getenv("PORT", 8080))
+MAX_UPLOAD_SIZE_BYTES = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", 1_048_576))
+CLAMAV_ENABLED = os.getenv("CLAMAV_ENABLED", "").lower() in {"1", "true", "yes", "on"}
+CLAMAV_HOST = os.getenv("CLAMAV_HOST", "127.0.0.1")
+CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", 3310))
+CLAMAV_TIMEOUT_SECONDS = float(os.getenv("CLAMAV_TIMEOUT_SECONDS", 10))
 
 CORS_ORIGINS = [
     origin.strip() for origin in (os.getenv("CORS_ORIGINS", "")).split(",") if origin.strip()
