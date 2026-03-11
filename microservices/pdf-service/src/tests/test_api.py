@@ -1,6 +1,7 @@
 import pytest
 import asyncio
 from pdf_service.main import app
+from pdf_service.domain.exceptions import MalwareDetectedError, ScannerUnavailableError
 
 @pytest.mark.asyncio
 async def test_helloworld(client):
@@ -59,3 +60,68 @@ async def test_await_tree_endpoint(client):
     assert "child_val" in res_json["results"]
     assert root_id in res_json["jobIds"]
     assert child_id in res_json["jobIds"]
+
+
+@pytest.mark.asyncio
+async def test_upload_rejects_non_pdf_content_type(client):
+    files = {
+        "file": ("curriculum.pdf", b"%PDF-1.4\nfake", "text/plain")
+    }
+
+    response = await client.post("/api/curriculum", files=files)
+    assert response.status_code == 415
+    assert "application/pdf" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_upload_rejects_invalid_pdf_signature(client):
+    files = {
+        "file": ("curriculum.pdf", b"not really a pdf", "application/pdf")
+    }
+
+    response = await client.post("/api/curriculum", files=files)
+    assert response.status_code == 415
+    assert "valid PDF" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_upload_rejects_oversized_pdf(client):
+    oversized_pdf = b"%PDF-1.4\n" + (b"0" * (app.state.curriculum_service.max_upload_size_bytes + 1))
+    files = {
+        "file": ("curriculum.pdf", oversized_pdf, "application/pdf")
+    }
+
+    response = await client.post("/api/curriculum", files=files)
+    assert response.status_code == 413
+
+
+@pytest.mark.asyncio
+async def test_upload_rejects_malware_positive_pdf(client, monkeypatch):
+    async def fake_scan(_: bytes) -> None:
+        raise MalwareDetectedError("Uploaded PDF was rejected by malware scanning")
+
+    monkeypatch.setattr(app.state.curriculum_service, "clamav_enabled", True)
+    monkeypatch.setattr(app.state.curriculum_service, "_scan_pdf_with_clamav", fake_scan)
+
+    files = {
+        "file": ("curriculum.pdf", b"%PDF-1.4\nfake", "application/pdf")
+    }
+
+    response = await client.post("/api/curriculum", files=files)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_upload_returns_503_when_scanner_is_unavailable(client, monkeypatch):
+    async def fake_scan(_: bytes) -> None:
+        raise ScannerUnavailableError("scanner down")
+
+    monkeypatch.setattr(app.state.curriculum_service, "clamav_enabled", True)
+    monkeypatch.setattr(app.state.curriculum_service, "_scan_pdf_with_clamav", fake_scan)
+
+    files = {
+        "file": ("curriculum.pdf", b"%PDF-1.4\nfake", "application/pdf")
+    }
+
+    response = await client.post("/api/curriculum", files=files)
+    assert response.status_code == 503

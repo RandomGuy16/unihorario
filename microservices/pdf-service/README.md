@@ -108,6 +108,17 @@ Important variables:
 - `CORS_ORIGINS`
 - `PORT`
 - `CAREERS_DIR`, `CATALOG_DIR`, `PDF_DIR`
+- `MAX_UPLOAD_SIZE_BYTES` (defaults to `1048576`, which is 1 MB)
+- `CLAMAV_ENABLED`
+- `CLAMAV_HOST`
+- `CLAMAV_PORT`
+- `CLAMAV_TIMEOUT_SECONDS`
+
+## Upload Security
+
+- Uploads are limited to 1 MB by default and must present a `.pdf` filename, `application/pdf` content type, and a valid PDF signature.
+- ClamAV scanning is optional. When `CLAMAV_ENABLED=true`, the service will scan uploads through a reachable `clamd` server before parsing.
+- If ClamAV is enabled but unreachable, uploads fail with `503 Service Unavailable`.
 
 ## Notes for Contributors
 

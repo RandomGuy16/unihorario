@@ -2,7 +2,14 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from pdf_service.core.config import CORS_ORIGINS
-from pdf_service.domain.exceptions import CurriculumNotFoundError
+from pdf_service.domain.exceptions import (
+    CurriculumNotFoundError,
+    FileTooLargeError,
+    MalwareDetectedError,
+    ScannerUnavailableError,
+    UnsupportedUploadTypeError,
+    UploadValidationError,
+)
 from pdf_service.domain.models import AwaitJobResponse, AwaitTreeResponse
 from pdf_service.domain.services import CatalogService, CurriculumService, JobManager
 from pdf_service.core.logger import logger
@@ -127,7 +134,41 @@ async def post_career_curriculum(file: UploadFile = File(...)):
             "Received PDF upload",
             extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
         )
-        return await app.state.curriculum_service.receive_curriculum(file.file)
+        return await app.state.curriculum_service.receive_curriculum(
+            file.file,
+            filename=file.filename,
+            content_type=file.content_type,
+        )
+    except FileTooLargeError as e:
+        logger.warning(
+            "Rejected oversized curriculum upload",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
+        raise HTTPException(status_code=413, detail=str(e))
+    except UnsupportedUploadTypeError as e:
+        logger.warning(
+            "Rejected unsupported curriculum upload",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
+        raise HTTPException(status_code=415, detail=str(e))
+    except MalwareDetectedError as e:
+        logger.warning(
+            "Rejected malware-positive curriculum upload",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
+        raise HTTPException(status_code=422, detail=str(e))
+    except UploadValidationError as e:
+        logger.warning(
+            "Rejected invalid curriculum upload",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+    except ScannerUnavailableError:
+        logger.exception(
+            "Malware scanner unavailable during curriculum upload",
+            extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
+        )
+        raise HTTPException(status_code=503, detail="Malware scanner unavailable")
     except IndexError:
         logger.warning(
             "Rejected invalid curriculum PDF",
@@ -141,7 +182,7 @@ async def post_career_curriculum(file: UploadFile = File(...)):
             "Unhandled error while receiving curriculum PDF",
             extra={"upload_filename": file.filename, "upload_content_type": file.content_type}
         )
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/api/jobs/await_job/{job_id}")

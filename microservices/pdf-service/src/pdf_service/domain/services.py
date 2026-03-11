@@ -5,11 +5,27 @@ import pathlib as path
 from io import BytesIO
 from enum import Enum
 from itertools import chain
+import socket
+import struct
 from typing import Dict, BinaryIO, Optional, Any, Callable, Coroutine
 
 from pydantic.v1 import BaseModel, Field
 from pdf_service.core.logger import logger
-from pdf_service.domain.exceptions import CurriculumNotFoundError
+from pdf_service.core.config import (
+    CLAMAV_ENABLED,
+    CLAMAV_HOST,
+    CLAMAV_PORT,
+    CLAMAV_TIMEOUT_SECONDS,
+    MAX_UPLOAD_SIZE_BYTES,
+)
+from pdf_service.domain.exceptions import (
+    CurriculumNotFoundError,
+    FileTooLargeError,
+    MalwareDetectedError,
+    ScannerUnavailableError,
+    UnsupportedUploadTypeError,
+    UploadValidationError,
+)
 from pdf_service.domain.models import UniversityCurriculum, Catalog, CreateCurriculumResponse, CareerCurriculum, \
     CatalogCareerData
 from pdf_service.domain.data_transform import parse_pdf_sync, get_file_metadata, \
@@ -471,6 +487,79 @@ class CurriculumService:
         self.catalog_service = catalog_service
         self.jobs            = jobs
         self.uow_factory     = uow_factory  # unit of work factory
+        self.max_upload_size_bytes = MAX_UPLOAD_SIZE_BYTES
+        self.clamav_enabled = CLAMAV_ENABLED
+
+    @staticmethod
+    def _is_pdf_filename(filename: Optional[str]) -> bool:
+        return bool(filename and filename.lower().endswith(".pdf"))
+
+    @staticmethod
+    def _is_pdf_content_type(content_type: Optional[str]) -> bool:
+        if not content_type:
+            return False
+        normalized = content_type.lower().split(";", 1)[0].strip()
+        return normalized in {"application/pdf", "application/x-pdf"}
+
+    def _read_pdf_bytes_with_limit(self, pdf: BinaryIO) -> bytes:
+        chunks: list[bytes] = []
+        total_read = 0
+
+        while True:
+            chunk = pdf.read(64 * 1024)
+            if not chunk:
+                break
+            total_read += len(chunk)
+            if total_read > self.max_upload_size_bytes:
+                raise FileTooLargeError(
+                    f"Uploaded file exceeds the {self.max_upload_size_bytes} byte limit"
+                )
+            chunks.append(chunk)
+
+        if total_read == 0:
+            raise UploadValidationError("Uploaded file is empty")
+
+        return b"".join(chunks)
+
+    @staticmethod
+    def _validate_pdf_signature(pdf_bytes: bytes) -> None:
+        if not pdf_bytes.startswith(b"%PDF-"):
+            raise UnsupportedUploadTypeError("Uploaded file is not a valid PDF")
+
+    def _validate_upload_metadata(self, *, filename: Optional[str], content_type: Optional[str]) -> None:
+        if not self._is_pdf_filename(filename):
+            raise UnsupportedUploadTypeError("Uploaded file must use a .pdf filename")
+
+        if not self._is_pdf_content_type(content_type):
+            raise UnsupportedUploadTypeError("Uploaded file must have content type application/pdf")
+
+    @staticmethod
+    def _scan_pdf_with_clamav_sync(pdf_bytes: bytes) -> None:
+        try:
+            with socket.create_connection(
+                (CLAMAV_HOST, CLAMAV_PORT),
+                timeout=CLAMAV_TIMEOUT_SECONDS,
+            ) as sock:
+                sock.sendall(b"zINSTREAM\0")
+                offset = 0
+                chunk_size = 64 * 1024
+                while offset < len(pdf_bytes):
+                    chunk = pdf_bytes[offset:offset + chunk_size]
+                    sock.sendall(struct.pack("!I", len(chunk)))
+                    sock.sendall(chunk)
+                    offset += len(chunk)
+                sock.sendall(struct.pack("!I", 0))
+                response = sock.recv(4096).decode("utf-8", errors="replace").strip()
+        except OSError as exc:
+            raise ScannerUnavailableError("ClamAV scan failed because the scanner is unavailable") from exc
+
+        if "FOUND" in response:
+            raise MalwareDetectedError("Uploaded PDF was rejected by malware scanning")
+        if "OK" not in response:
+            raise ScannerUnavailableError(f"Unexpected ClamAV response: {response}")
+
+    async def _scan_pdf_with_clamav(self, pdf_bytes: bytes) -> None:
+        await asyncio.to_thread(self._scan_pdf_with_clamav_sync, pdf_bytes)
 
     async def get_curriculum(self, school, job_id: str = ''):
         """
@@ -544,7 +633,13 @@ class CurriculumService:
     #     return await self.parse_multiple_pdfs(pdf_files)
 
 
-    async def receive_curriculum(self, pdf: BinaryIO):
+    async def receive_curriculum(
+        self,
+        pdf: BinaryIO,
+        *,
+        filename: Optional[str] = None,
+        content_type: Optional[str] = None,
+    ):
         """
         Processes a newly uploaded curriculum PDF.
 
@@ -555,9 +650,14 @@ class CurriculumService:
         :return: A CreateCurriculumResponse containing metadata and the parse job ID.
         :raises RuntimeError: If the parse job submission fails.
         """
-        pdf_bytes = pdf.read()
+        self._validate_upload_metadata(filename=filename, content_type=content_type)
+        pdf_bytes = self._read_pdf_bytes_with_limit(pdf)
         pdf_size_bytes = len(pdf_bytes)
         logger.info("Read uploaded PDF into memory", extra={"pdf_size_bytes": pdf_size_bytes})
+        self._validate_pdf_signature(pdf_bytes)
+        if self.clamav_enabled:
+            await self._scan_pdf_with_clamav(pdf_bytes)
+            logger.info("Uploaded PDF passed ClamAV scan", extra={"pdf_size_bytes": pdf_size_bytes})
         # read the metadata, this is kinda fast compared to parsing the whole file
         metadata = await self.get_curriculum_metadata(BytesIO(pdf_bytes))
         logger.info(
