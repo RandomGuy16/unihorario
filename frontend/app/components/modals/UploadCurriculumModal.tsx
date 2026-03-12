@@ -4,6 +4,8 @@ import { useCatalog } from "@/app/providers/useCatalog";
 import { useCurriculum } from "@/app/providers/useCurriculum";
 import { SubmitCurriculumResponse } from "@/app/models/dto";
 import { toast } from "sonner";
+import Image from "next/image"
+import UploadAssignmentProgrammingExample from "@/public/download_assignment_programming_eg.png";
 
 interface UploadCurriculumModalProps {
 	isOpen: boolean;
@@ -100,7 +102,10 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 				<section about={"upload-info"} className="flex flex-col justify-center items-center">
 					<h2 className="text-heading">Sube tu programación de asignaturas</h2>
 					<br />
-					<p>lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet</p>
+					<p>
+						Si tu carrera no aparece en la lista, o si actualizaron la programación de asignaturas del actual
+						periodo academico, le invitamos a subir su programación de asignaturas de la plataforma SUM
+					</p>
 					<div className="bg-green-700/50 border border-green-300 m-2 p-3 rounded-md text-left">
 						<Info className="inline w-4 h-4 mr-2 text-green-300" />
 						<p className="inline text-green-300">
@@ -111,12 +116,19 @@ function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) 
 				<hr className="w-full my-2 text-foreground-muted"/>
 				<section about="upload" className="flex flex-col justify-center items-center">
 					<p>Para subir archivos y puedas planificar con el horario de tu carrera:</p>
-					<ul className="list-none list-inside w-3/4 text-left text-foreground-muted">
-						<li>Ingresa a la plataforma SUM</li>
-						<li>Ve al men&uacute; lateral/Matr&iacute;cula/Programaci&oacute;n de Asignaturas </li>
-						<li>Descarga tu programación de asignaturas</li>
-						<li>Sube el archivo a esta p&aacute;gina</li>
-					</ul>
+					<div className="flex flex-col justify-between items-center w-full">
+						<ul className="list-none list-inside w-3/4 text-left text-foreground-muted">
+							<li>Ingresa a la plataforma SUM</li>
+							<li>Ve al men&uacute; lateral/Matr&iacute;cula/Programaci&oacute;n de Asignaturas </li>
+							<li>Descarga tu programación de asignaturas</li>
+							<li>Sube el archivo a esta p&aacute;gina</li>
+						</ul>
+						<Image
+							src={UploadAssignmentProgrammingExample}
+							alt="example couldn't load :("
+							className="w-2/3 h-auto rounded-md"
+						/>
+					</div>
 					<label
 						className={`flex flex-col justify-center items-center gap-2 w-full h-32 m-4 border rounded-md border-dashed
 						cursor-pointer transition duration-200 ease-in-out ${
