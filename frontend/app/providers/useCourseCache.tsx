@@ -51,6 +51,10 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     return next
   }, [previewSections, selectedSections])
 
+  useEffect(() => {
+    console.log(allCourses)
+  }, [allCourses])
+
   // stateful inverted indexes that help with the course render list
   const coursesByCareer = useMemo(() => {
     const map = new Map<string, Set<string>>()
