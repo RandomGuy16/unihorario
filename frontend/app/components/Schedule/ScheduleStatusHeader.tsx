@@ -6,6 +6,7 @@ import { capitalize } from "@/app/utils/misc";
 import { useCourseCache } from "@/app/providers/useCourseCache";
 import { useCredits } from "@/app/providers/useCredits";
 import { logger } from "@/app/utils/logger";
+import { useState } from "react";
 
 
 // Represents a time slot with start and end times
@@ -69,6 +70,8 @@ interface ScheduleStatusHeaderProps {
 export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHeaderProps) {
   const { selectedCoursesCount } = useCourseCache()
   const { credits } = useCredits()
+  const [isExportingExcel, setIsExportingExcel] = useState(false)
+  const [isExportingImage, setIsExportingImage] = useState(false)
 
   /**
    * Exports the calendar grid as a PNG image
@@ -76,6 +79,7 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
    */
   const exportImage = async () => {
     try {
+      setIsExportingImage(true)
       const calendarGrid = document.getElementById('calendar-grid')!
       const downloadUrl = await htmlToImage.toPng(calendarGrid)
       const link = document.createElement('a')
@@ -84,6 +88,8 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
       link.click()
     } catch (error) {
       logger.error("Failed to export schedule image", error)
+    } finally {
+      setIsExportingImage(false)
     }
   }
 
@@ -121,6 +127,7 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
 
     // Generate and download the Excel file
     try {
+      setIsExportingExcel(true)
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], {
         type: 'applicacion/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -133,11 +140,13 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
       window.URL.revokeObjectURL(url)
     } catch (error) {
       logger.error("Failed to export schedule workbook", error)
+    } finally {
+      setIsExportingExcel(false)
     }
   }
 
   return (
-    <div className="flex flex-col p-2 h-full w-full">
+    <div className="flex flex-col p-2 h-full w-full select-none">
       <h2 className="text-heading">Horario</h2>
       {/* Schedule metrics */}
       <div className="flex flex-1 flex-row justify-between items-center w-full">
@@ -152,27 +161,32 @@ export default function ScheduleStatusHeader({ daysSchedules }: ScheduleStatusHe
             Dark theme: #10B981 (emerald-500)
             Light theme: #2563EB (blue-600)
             Dark theme: #3B82F6 (blue-500) */}
-        <div className="mx-2 flex flex-row justify-end items-start">
-          <span className="mx-1 my-2 text-label text-foreground">Exportar:</span>
-          <div className='flex flex-col justify-center items-start'>
+        <div className="mx-2 flex flex-row justify-center items-center text-control">
+          <span className="mx-1 my-2 text-foreground">Exportar:</span>
+          <div className='flex flex-row justify-center items-start gap-1'>
             <button
               className="
-          py-2 px-4 mx-1 mb-2 border-none rounded-lg shadow-elev-1
-          text-on-action bg-action-primary"
+              p-1 px-2 border border-transparent rounded-lg shadow-elev-1 text-on-action
+              cursor-pointer bg-action-primary/90 hover:bg-action-primary transition-all duration-100"
               export-type="image"
+              disabled={isExportingImage}
+              aria-busy={isExportingImage}
               onClick={() => exportImage()}>
-              <Image aria-label={"idk"} className="inline text-caption mr-1" />
-              <span className="text-label">imagen</span>
+              {isExportingImage
+                ? (<span>exportando...</span>)
+                : (<><Image aria-label={"idk"} className="inline mr-1 h-4" /><span>imagen</span></>)}
             </button>
             <button
               className="
-            flex flex-row justify-center items-center
-          py-2 px-4 mx-1 border-none rounded-lg shadow-elev-1
-          text-on-action bg-action-success"
+              p-1 px-2 border border-transparent rounded-lg shadow-elev-1 text-on-action
+              cursor-pointer bg-action-success/90 hover:bg-action-success transition-all duration-100"
               export-type="excel"
+              disabled={isExportingExcel}
+              aria-busy={isExportingExcel}
               onClick={() => exportToExcel()}>
-              <Sheet className="inline text-caption mr-1" />
-              <span className="text-label">excel</span>
+              {isExportingExcel
+                ? (<span>exportando...</span>)
+                : (<><Sheet aria-label={'idk'} className="inline mr-1 h-4" /><span>excel</span></>)}
             </button>
           </div>
         </div>
