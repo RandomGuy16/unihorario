@@ -40,6 +40,8 @@ export const CurriculumService = {
             section.assignment,
             career.metadata.school
           )
+          // add course id to section
+          section.courseKey = courseKey
           let course = registry.get(courseKey)
 
           // Create the course once, then keep attaching all parsed sections to it.

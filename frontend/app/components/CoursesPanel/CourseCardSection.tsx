@@ -76,8 +76,9 @@ export default function CourseCardSection({ course, section, colorPair }: Course
   return (
     <div
       key={``}
-      className='w-full flex flex-row justify-between items-center py-1 px-2 mt-1 font-normal text-micro sm:text-caption lg:text-body duration-150 ease-linear select-none
-      rounded-md shadow-elev-1 border backdrop-blur-[1px]'
+      className='
+      w-full flex flex-row justify-between items-center py-1 px-2 mt-1 font-normal text-micro sm:text-caption
+      lg:text-body duration-150 ease-linear select-none rounded-md shadow-elev-1 border backdrop-blur-[1px]'
       style={{
         borderColor: buttonBorderColor,
         borderStyle: isPreviewedAndSelected ? 'dashed' : 'solid',
@@ -90,7 +91,7 @@ export default function CourseCardSection({ course, section, colorPair }: Course
       onMouseLeave={handleMouseLeave}
     >
       {/* Label element to display section data and add it to the calendar on click */}
-      <label className='flex-1'>
+      <label className='flex-1 cursor-pointer'>
         <input
           className="hidden"
           type="checkbox"
@@ -107,7 +108,11 @@ export default function CourseCardSection({ course, section, colorPair }: Course
               title="Buscar en misprofesores.com"
               className="group text-label hover:text-body font-bold transition-colors duration-200"
             >
-              <Search className="h-4 w-4 transition-all duration-200 ease-out filter drop-shadow-[0_0_4px_rgba(255,255,255,0.25)] group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]" />
+              <Search
+                className="
+                h-4 w-4 transition-all duration-200 ease-out filter drop-shadow-[0_0_4px_rgba(255,255,255,0.25)]
+                group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]"
+              />
             </a>
           </div>
             Tope de alumnos: {section.maxStudents}
