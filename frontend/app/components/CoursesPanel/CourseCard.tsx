@@ -22,16 +22,16 @@ function CourseCardAllSectionsCheckbox({ course, colorPair, checked }: CourseCar
   const { renderSections, hideSections, previewSections } = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
-    if (!checked) renderSections(course.getSections(), course)
-    else hideSections(course.getSections(), course)
+    if (!checked) renderSections(course.getSections())
+    else hideSections(course.getSections())
   }
   const handleMouseEnter = () => {
     // just show the sections in a manner that they don't feel already selected
-    renderSections(course.getSections(), course, true)
+    renderSections(course.getSections(), true)
   }
   const handleMouseLeave = () => {
     // like previously said but inverted
-    hideSections(course.getSections(), course, true)
+    hideSections(course.getSections(), true)
   }
 
   const courseSections = course.getSections()
@@ -201,7 +201,6 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
             {course.getSections().map((section: CourseSection, index: number) =>
               <CourseCardSection
                 key={`CourseItemButton: ${index}` + section.sectionNumber}
-                course={course}
                 colorPair={{
                   background: bgColor,
                   text: textColor

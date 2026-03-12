@@ -1,6 +1,5 @@
 import { Search } from 'lucide-react'
 import { CourseSection } from "@/app/models/CourseSection";
-import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
 import { useCourseCache } from "@/app/providers/useCourseCache";
 
@@ -9,7 +8,6 @@ import { useCourseCache } from "@/app/providers/useCourseCache";
  * Properties for the 2 kinds of course checkboxes
  * */
 interface CourseCardCheckboxProps {
-  course: Course;
   section: CourseSection;
   colorPair: CourseColor;
 }
@@ -18,7 +16,7 @@ function withAlpha(hexColor: string, alpha: string): string {
   return hexColor.length === 9 ? `${hexColor.slice(0, 7)}${alpha}` : `${hexColor}${alpha}`
 }
 
-export default function CourseCardSection({ course, section, colorPair }: CourseCardCheckboxProps) {
+export default function CourseCardSection({ section, colorPair }: CourseCardCheckboxProps) {
   const { renderSections, hideSections, previewSections, selectedSections } = useCourseCache()
   const isSelected = selectedSections.has(section)
   const isPreviewed = previewSections.has(section)
@@ -28,20 +26,20 @@ export default function CourseCardSection({ course, section, colorPair }: Course
   const handleClick = () => {
     // if is not checked: not added -> add the course now
     if (!isSelected) {
-      renderSections(section, course)
+      renderSections(section)
     }
     else {
-      hideSections(section, course)
+      hideSections(section)
     }
   }
 
   const handleMouseEnter = () => {
     // just show the sections in a manner that they don't feel already selected
-    renderSections(section, course, true)
+    renderSections(section, true)
   }
   const handleMouseLeave = () => {
     // like previously said but inverted
-    hideSections(section, course, true)
+    hideSections(section, true)
   }
 
   const buttonTextColor = isPreviewedAndSelected || isSelected
@@ -72,7 +70,6 @@ export default function CourseCardSection({ course, section, colorPair }: Course
         ? `0 6px 14px ${withAlpha(colorPair.text, "22")}`
         : undefined
 
-  // valuable comment: checked is the local state of the checkbox, initialized in the course object
   return (
     <div
       key={``}

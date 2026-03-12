@@ -48,7 +48,6 @@ function ScheduleGrid() {
 
   const sectionsToRender = useMemo(
     () => Array.from(visibleSections)
-      .filter((section) => section.courseVisible)
       .sort((left, right) =>
         left.sectionNumber - right.sectionNumber
       ),

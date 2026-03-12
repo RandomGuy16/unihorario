@@ -75,9 +75,7 @@ export class Course {
   }
 
   setVisibility(visibility: boolean) {
-    // change visibility of the course and all its sections
     this.visible = visibility
-    this.sections.forEach(section => section.courseVisible = visibility)
   }
 
   getSections(): CourseSection[] {

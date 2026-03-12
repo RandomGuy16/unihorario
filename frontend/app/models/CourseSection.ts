@@ -2,7 +2,6 @@ import { Schedule } from "@/app/models/Schedule";
 import {
   Assignment,
   AssignmentId,
-  CourseVisibility,
   Credits,
   MaxStudents,
   SectionNumber,
@@ -17,7 +16,5 @@ export interface CourseSection {
   schedules       : Schedule[];
   credits         : Credits;
   maxStudents     : MaxStudents;
-  courseVisible   : CourseVisibility;  // its parent course visibility
-  isPreviewHovered: boolean;  // new parameter to allow hovering a course section and see its schedules in the grid
   courseKey       : string;
 }

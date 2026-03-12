@@ -39,13 +39,13 @@ function CourseList() {
   //const { courseRegistry } = useCurriculum()
   const { isMobile } = useResponsive()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-  const { allCourses, getCoursesByFilters } = useCourseCache()
+  const { courseRegistry, getCoursesByFilters } = useCourseCache()
   const { selection } = useFilters()
 
   const coursesToRender = useMemo(() => {
-    if (allCourses.size === 0) return []
+    if (courseRegistry.size === 0) return []
     return getCoursesByFilters(selection)
-  }, [allCourses, selection, getCoursesByFilters])
+  }, [courseRegistry, selection, getCoursesByFilters])
 
   return (
     <div className={`

@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
-import { X, Eye, EyeOff } from 'lucide-react'
-import { useState, useRef, useEffect } from "react";
+import { X, Eye } from 'lucide-react'
+import { useState } from "react";
 import { CourseSection } from "@/app/models/CourseSection";
 import { Schedule } from "@/app/models/Schedule";
 import { CourseColor, getCourseColor } from "@/app/utils/CourseCard";
@@ -21,10 +21,8 @@ interface ScheduleEventCardProps {
 }
 function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const { previewSections, selectedSections, allCourses, hideSections, setCourseInvisible } = useCourseCache()
+  const { previewSections, selectedSections, courseRegistry, hideSections, setCourseInvisible } = useCourseCache()
   const { theme } = useTheme()
-  const cardRef = useRef<HTMLDivElement | null>(null)
-  // const [isVeryNarrow, setIsVeryNarrow] = useState(false)
 
   // get the color pair for the event card
   const colorPair: CourseColor = getCourseColor(section.assignmentId)
@@ -44,12 +42,13 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
       ? '0 8px 22px rgba(0, 0, 0, 0.10)'
       : '0 6px 18px rgba(0, 0, 0, 0.12)'
 
-  const handleOnClickOnDelete = () => {
-    const course = allCourses.get(section.courseKey)!
-    hideSections(section, course)
+  const handleRemoveFromGrid = () => {
+    hideSections(section)
   }
-  const handleOnClickOnHide = () => {
-    setCourseInvisible(allCourses.get(section.courseKey)!)
+  const handleHideCourse = () => {
+    const course = courseRegistry.get(section.courseKey)
+    if (!course) return
+    setCourseInvisible(course)
   }
 
   return (
@@ -89,7 +88,6 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
         borderWidth: isPreviewHoveredAndSelected ? '2px' : '1px',
       }}>
       <div
-        ref={cardRef}
         className="
           relative w-full h-full overflow-hidden border-l-8 rounded-lg
           text-ellipsis text-micro md:text-caption lg:text-body select-none shadow-elev-1 transition-all duration-200
@@ -131,11 +129,11 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
         >
           <Eye
             className="w-4 hover:scale-110 transition-all duration-200 cursor-pointer"
-            onClick={() => handleOnClickOnHide()}
+            onClick={handleHideCourse}
           ></Eye>
           <X
             className="w-4 hover:scale-110 transition-all duration-200 cursor-pointer"
-            onClick={() => handleOnClickOnDelete()}
+            onClick={handleRemoveFromGrid}
           ></X>
         </motion.div>
       </div>

@@ -20,8 +20,8 @@ export const CurriculumService = {
     return await response.json()
   },
 
-  createCourseRegistry(data: UniversityCurriculum) {
-    const registry = new Map<string, Course>()
+  createCourses(data: UniversityCurriculum) {
+    const fetchedCourses = new Map<string, Course>()
     const careers = data.years
       .flatMap(y => y.careerCurriculums)
 
@@ -42,7 +42,7 @@ export const CurriculumService = {
           )
           // add course id to section
           section.courseKey = courseKey
-          let course = registry.get(courseKey)
+          let course = fetchedCourses.get(courseKey)
 
           // Create the course once, then keep attaching all parsed sections to it.
           if (!course) {
@@ -55,7 +55,7 @@ export const CurriculumService = {
               career.metadata.studyPlan,
               cycle.cycle
             )
-            registry.set(courseKey, course)
+            fetchedCourses.set(courseKey, course)
           }
 
           course.addSection(section)
@@ -63,7 +63,7 @@ export const CurriculumService = {
       }
     }
 
-    return registry
+    return fetchedCourses
   },
 
   async submitCurriculumFile(file: File): Promise<SubmitCurriculumResponse> {
