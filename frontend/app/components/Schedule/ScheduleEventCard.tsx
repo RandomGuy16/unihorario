@@ -125,14 +125,25 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
             color: `${textColor}${baseBorderAlpha}`,
           }}
         >
-          <Eye
-            className="w-4 hover:scale-110 transition-all duration-200 cursor-pointer"
+          <button
+            type="button"
+            title="Ocultar curso"
+            aria-label="Ocultar curso"
             onClick={handleHideCourse}
-          ></Eye>
-          <X
-            className="w-4 hover:scale-110 transition-all duration-200 cursor-pointer"
+            className="hover:scale-110 transition-all duration-200 cursor-pointer"
+          >
+            <Eye className="w-4" />
+          </button>
+
+          <button
+            type="button"
+            title="Quitar sección del horario"
+            aria-label="Quitar sección del horario"
             onClick={handleRemoveFromGrid}
-          ></X>
+            className="hover:scale-110 transition-all duration-200 cursor-pointer"
+          >
+            <X className="w-4" />
+          </button>
         </motion.div>
       </div>
     </motion.div>
