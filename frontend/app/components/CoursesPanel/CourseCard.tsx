@@ -1,11 +1,11 @@
 import { ChevronDown, ChevronRight, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import CourseCardSection from '@/app/components/CoursesPanel/CourseCardSection';
 import { CourseSection } from "@/app/models/CourseSection";
 import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
 import { useTheme } from "@/app/providers/useTheme";
-import { useCourseCache } from "@/app/providers/useCourseCache";
+import {useCourseCache} from "@/app/providers/useCourseCache";
 
 
 interface CourseCardCheckboxAllProps {
@@ -18,25 +18,20 @@ function withAlpha(hexColor: string, alpha: string): string {
   return hexColor.length === 9 ? `${hexColor.slice(0, 7)}${alpha}` : `${hexColor}${alpha}`
 }
 
-function CourseCardCheckboxAll({ course, colorPair, checked }: CourseCardCheckboxAllProps) {
+function CourseCardAllSectionsCheckbox({ course, colorPair, checked }: CourseCardCheckboxAllProps) {
   const { renderSections, hideSections, previewSections } = useCourseCache()
   // function to handle the click event of the checkbox
   const handleClick = () => {
-    if (!checked) {
-      renderSections(course.getSections(), course)
-    }
-    else {
-      // update the global trackers
-      hideSections(course.getSections(), course)
-    }
+    if (!checked) renderSections(course.getSections())
+    else hideSections(course.getSections())
   }
   const handleMouseEnter = () => {
     // just show the sections in a manner that they don't feel already selected
-    renderSections(course.getSections(), course, true)
+    renderSections(course.getSections(), true)
   }
   const handleMouseLeave = () => {
     // like previously said but inverted
-    hideSections(course.getSections(), course, true)
+    hideSections(course.getSections(), true)
   }
 
   const courseSections = course.getSections()
@@ -78,10 +73,9 @@ function CourseCardCheckboxAll({ course, colorPair, checked }: CourseCardCheckbo
       onMouseLeave={handleMouseLeave}
     >
       <label
-        className={
-          `py-1 px-2 mr-1 font-normal text-micro sm:text-caption lg:text-body duration-100 ease-linear select-none
-         rounded-md shadow-elev-1 border`
-        }
+        className="
+        py-1 px-2 mr-1 font-normal text-micro sm:text-caption lg:text-body duration-100 ease-linear select-none
+        rounded-md shadow-elev-1 border cursor-pointer"
         data-checked={checked}
         style={{
           borderColor: buttonBorderColor,
@@ -116,13 +110,16 @@ interface CourseCardProps {
  */
 function CourseCard({ course, colorPair }: CourseCardProps) {
   const { theme } = useTheme()
-  const { setCourseInvisible, setCourseVisible, selectedSections } = useCourseCache()
+  const { setCourseInvisible, setCourseVisible, selectedSections, visibleCourses } = useCourseCache()
 
   // state variable to switch the dropdown menu
   const [isOpen, setIsOpen] = useState(false)
 
   // set to track locally selected sections (per course)
-  const [isCourseVisible, setIsCourseVisible] = useState(course.getVisibility())
+  const isCourseVisible = useMemo(() => {
+    return visibleCourses.has(course.getKey())
+  }, [visibleCourses, course])
+
   const areAllChecked = course.getSections().every(section => selectedSections.has(section))
 
   const textColor = theme === 'dark'
@@ -134,10 +131,8 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
 
   // function to handle the visibility of the course
   const handleCourseVisibility = () => {
-    if (isCourseVisible) setCourseInvisible(course)
-    else setCourseVisible(course)
-
-    setIsCourseVisible(!isCourseVisible)
+    if (isCourseVisible) setCourseInvisible(course.getKey())
+    else setCourseVisible(course.getKey())
   }
 
   return (
@@ -174,17 +169,17 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
           <div className="flex flex-row justify-between items-center mb-1">
             <div className='flex flex-row items-center gap-1'>
               <span>Añadir secciones:</span>
-              <CourseCardCheckboxAll
+              <CourseCardAllSectionsCheckbox
                 course={course}
                 colorPair={{
                   background: bgColor,
                   text: textColor
                 }}
                 checked={areAllChecked}>
-              </CourseCardCheckboxAll>
+              </CourseCardAllSectionsCheckbox>
             </div>
             {/* </button> */}
-            <button className="h-4"
+            <button className="h-4 cursor-pointer"
               onClick={() => {
                 // e.stopPropagation()
                 handleCourseVisibility()
@@ -200,12 +195,11 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
           <div
             className="
           flex flex-col justify-start items-center mt-1 w-full overflow-x-auto scrollbar-thin
-          scrollbar-thumb-[rgb(var(--color-border))] scrollbar-track-[rgb(var(--color-surface-muted))]">
+          scrollbar-thumb-border scrollbar-track-surface-muted">
             {/* creates a button for every group in classGroups */}
             {course.getSections().map((section: CourseSection, index: number) =>
               <CourseCardSection
                 key={`CourseItemButton: ${index}` + section.sectionNumber}
-                course={course}
                 colorPair={{
                   background: bgColor,
                   text: textColor

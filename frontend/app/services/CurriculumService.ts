@@ -1,6 +1,6 @@
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
-import { generateCourseKey } from "@/app/providers/useCourseCache";
+import { generateCourseKey } from "@/app/utils/courseKey";
 import { AwaitJobResponse, SubmitCurriculumResponse } from "@/app/models/dto";
 
 export const CurriculumService = {
@@ -20,8 +20,8 @@ export const CurriculumService = {
     return await response.json()
   },
 
-  createCourseRegistry(data: UniversityCurriculum) {
-    const registry = new Map<string, Course>()
+  createCourses(data: UniversityCurriculum) {
+    const fetchedCourses = new Map<string, Course>()
     const careers = data.years
       .flatMap(y => y.careerCurriculums)
 
@@ -40,12 +40,15 @@ export const CurriculumService = {
             section.assignment,
             career.metadata.school
           )
-          let course = registry.get(courseKey)
+          // add course id to section
+          section.courseKey = courseKey
+          let course = fetchedCourses.get(courseKey)
 
           // Create the course once, then keep attaching all parsed sections to it.
           if (!course) {
             course = new Course(
               section.assignmentId,
+              courseKey,
               section.assignment,
               section.credits,
               Array.from(teachers),
@@ -53,7 +56,7 @@ export const CurriculumService = {
               career.metadata.studyPlan,
               cycle.cycle
             )
-            registry.set(courseKey, course)
+            fetchedCourses.set(courseKey, course)
           }
 
           course.addSection(section)
@@ -61,7 +64,7 @@ export const CurriculumService = {
       }
     }
 
-    return registry
+    return fetchedCourses
   },
 
   async submitCurriculumFile(file: File): Promise<SubmitCurriculumResponse> {

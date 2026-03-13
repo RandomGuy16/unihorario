@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { X, Eye } from 'lucide-react'
 import { useState } from "react";
 import { CourseSection } from "@/app/models/CourseSection";
 import { Schedule } from "@/app/models/Schedule";
@@ -20,7 +21,7 @@ interface ScheduleEventCardProps {
 }
 function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const { previewSections, selectedSections } = useCourseCache()
+  const { previewSections, selectedSections, hideSections, setCourseInvisible } = useCourseCache()
   const { theme } = useTheme()
 
   // get the color pair for the event card
@@ -40,6 +41,13 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
     : isPreviewHovered
       ? '0 8px 22px rgba(0, 0, 0, 0.10)'
       : '0 6px 18px rgba(0, 0, 0, 0.12)'
+
+  const handleRemoveFromGrid = () => {
+    hideSections(section)
+  }
+  const handleHideCourse = () => {
+    setCourseInvisible(section.courseKey)
+  }
 
   return (
     <motion.div
@@ -66,20 +74,21 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
         duration: 0.2,
         ease: 'easeOut'
       }}
-      className="absolute border-2 border-transparent rounded-lg"
+      className="absolute rounded-lg"
       style={{
         top: positionStyle.top,
         height: positionStyle.height,
         width: positionStyle.width,
         left: positionStyle.left,
         zIndex: isHovered ? 30 : isPreviewHoveredAndSelected ? 25 : isPreviewHovered ? 20 : 10,
-        borderColor: isPreviewHovered || isPreviewHoveredAndSelected ? `${textColor}${baseBorderAlpha}` : 'transparent',
-        borderStyle: isPreviewHoveredAndSelected ? 'dashed' : 'solid'
+        borderColor: isPreviewHovered || isPreviewHoveredAndSelected ? `${textColor}${baseBorderAlpha}` : `${textColor}00`,
+        borderStyle: isPreviewHoveredAndSelected ? 'dashed' : 'solid',
+        borderWidth: isPreviewHoveredAndSelected ? '2px' : '1px',
       }}>
       <div
         className="
-          absolute p-1 min-h-20 w-full border-l-8 rounded-lg text-ellipsis text-micro md:text-caption
-          lg:text-body select-none shadow-elev-1 transition-all duration-200
+          relative w-full h-full overflow-hidden border-l-8 rounded-lg
+          text-ellipsis text-micro md:text-caption lg:text-body select-none shadow-elev-1 transition-all duration-200
         "
         style={{
           backgroundColor: `${bgColor}${baseBackgroundAlpha}`,
@@ -88,12 +97,43 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
           height: positionStyle.height,
           opacity: isPreviewHovered && !isSelected ? 0.68 : 1,
         }}>
-        <p className='inline-block w-full overflow-hidden text-ellipsis'>
+        <p
+          className='inline-block w-full h-full p-1 overflow-hidden text-ellipsis leading-tight'
+          style={{
+            maskImage: "linear-gradient(to bottom, black 0%, black 65%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 65%, transparent 100%)",
+          }}
+        >
           {capitalize(schedule.assignment)}<br />
           sección {section.sectionNumber}<br />
           {section.teacher}<br />
           Tope: {section.maxStudents}
         </p>
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: isHovered ? 1 : 0,
+          }}
+          transition={{
+            duration: 0.2,
+            ease: 'easeInOut',
+          }}
+          className="flex flex-row justify-end items-center absolute bottom-0 left-0 z-20 w-full gap-1 p-1"
+          style={{
+            pointerEvents: isHovered ? "auto" : "none",
+            background: `linear-gradient(to bottom, transparent 0%, ${bgColor}${baseBackgroundAlpha} 100%)`,
+            color: `${textColor}${baseBorderAlpha}`,
+          }}
+        >
+          <Eye
+            className="w-4 hover:scale-110 transition-all duration-200 cursor-pointer"
+            onClick={handleHideCourse}
+          ></Eye>
+          <X
+            className="w-4 hover:scale-110 transition-all duration-200 cursor-pointer"
+            onClick={handleRemoveFromGrid}
+          ></X>
+        </motion.div>
       </div>
     </motion.div>
   )

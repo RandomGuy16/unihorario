@@ -8,7 +8,7 @@ import {SubmitCurriculumResponse} from "@/app/models/dto";
 // Define the shape of our state
 interface CurriculumState {
   data: UniversityCurriculum | null;
-  courseRegistry: Map<string, Course> | null;
+  coursesPayload: Map<string, Course> | null;
   loading: boolean;
   error: string | null;
 }
@@ -25,12 +25,12 @@ function curriculumReducer(state: CurriculumState, action: CurriculumAction) {
     case "FETCH_START":
       return {...state, loading: true, error: null}
     case "FETCH_SUCCESS":
-      const registry = CurriculumService.createCourseRegistry(action.payload)
+      const fetchedCourses = CurriculumService.createCourses(action.payload)
       return {
         ...state,
         loading: false,
         data: action.payload,
-        courseRegistry: registry
+        coursesPayload: fetchedCourses
       }
     case "FETCH_ERROR":
       return {...state, loading: false, error: action.payload}
@@ -42,7 +42,7 @@ function curriculumReducer(state: CurriculumState, action: CurriculumAction) {
 export function useCurriculumLoader() {
   const [state, dispatch] = useReducer(curriculumReducer, {
     data: null,
-    courseRegistry: null,
+    coursesPayload: null,
     loading: false,
     error: null,
   })

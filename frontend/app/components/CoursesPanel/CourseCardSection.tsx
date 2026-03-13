@@ -1,6 +1,5 @@
 import { Search } from 'lucide-react'
 import { CourseSection } from "@/app/models/CourseSection";
-import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
 import { useCourseCache } from "@/app/providers/useCourseCache";
 
@@ -9,7 +8,6 @@ import { useCourseCache } from "@/app/providers/useCourseCache";
  * Properties for the 2 kinds of course checkboxes
  * */
 interface CourseCardCheckboxProps {
-  course: Course;
   section: CourseSection;
   colorPair: CourseColor;
 }
@@ -18,7 +16,7 @@ function withAlpha(hexColor: string, alpha: string): string {
   return hexColor.length === 9 ? `${hexColor.slice(0, 7)}${alpha}` : `${hexColor}${alpha}`
 }
 
-export default function CourseCardSection({ course, section, colorPair }: CourseCardCheckboxProps) {
+export default function CourseCardSection({ section, colorPair }: CourseCardCheckboxProps) {
   const { renderSections, hideSections, previewSections, selectedSections } = useCourseCache()
   const isSelected = selectedSections.has(section)
   const isPreviewed = previewSections.has(section)
@@ -28,20 +26,20 @@ export default function CourseCardSection({ course, section, colorPair }: Course
   const handleClick = () => {
     // if is not checked: not added -> add the course now
     if (!isSelected) {
-      renderSections(section, course)
+      renderSections(section)
     }
     else {
-      hideSections(section, course)
+      hideSections(section)
     }
   }
 
   const handleMouseEnter = () => {
     // just show the sections in a manner that they don't feel already selected
-    renderSections(section, course, true)
+    renderSections(section, true)
   }
   const handleMouseLeave = () => {
     // like previously said but inverted
-    hideSections(section, course, true)
+    hideSections(section, true)
   }
 
   const buttonTextColor = isPreviewedAndSelected || isSelected
@@ -72,12 +70,12 @@ export default function CourseCardSection({ course, section, colorPair }: Course
         ? `0 6px 14px ${withAlpha(colorPair.text, "22")}`
         : undefined
 
-  // valuable comment: checked is the local state of the checkbox, initialized in the course object
   return (
     <div
       key={``}
-      className='w-full flex flex-row justify-between items-center py-1 px-2 mt-1 font-normal text-micro sm:text-caption lg:text-body duration-150 ease-linear select-none
-      rounded-md shadow-elev-1 border backdrop-blur-[1px]'
+      className='
+      w-full flex flex-row justify-between items-center py-1 px-2 mt-1 font-normal text-micro sm:text-caption
+      lg:text-body duration-150 ease-linear select-none rounded-md shadow-elev-1 border backdrop-blur-[1px]'
       style={{
         borderColor: buttonBorderColor,
         borderStyle: isPreviewedAndSelected ? 'dashed' : 'solid',
@@ -90,7 +88,7 @@ export default function CourseCardSection({ course, section, colorPair }: Course
       onMouseLeave={handleMouseLeave}
     >
       {/* Label element to display section data and add it to the calendar on click */}
-      <label className='flex-1'>
+      <label className='flex-1 cursor-pointer'>
         <input
           className="hidden"
           type="checkbox"
@@ -107,7 +105,11 @@ export default function CourseCardSection({ course, section, colorPair }: Course
               title="Buscar en misprofesores.com"
               className="group text-label hover:text-body font-bold transition-colors duration-200"
             >
-              <Search className="h-4 w-4 transition-all duration-200 ease-out filter drop-shadow-[0_0_4px_rgba(255,255,255,0.25)] group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]" />
+              <Search
+                className="
+                h-4 w-4 transition-all duration-200 ease-out filter drop-shadow-[0_0_4px_rgba(255,255,255,0.25)]
+                group-hover:scale-110 group-hover:brightness-125 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]"
+              />
             </a>
           </div>
             Tope de alumnos: {section.maxStudents}

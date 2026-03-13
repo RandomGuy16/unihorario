@@ -3,6 +3,7 @@ import { logger } from "@/app/utils/logger";
 
 export class Course {
   private readonly id: string;
+  private readonly key: string;
   private readonly name: string;
   private readonly school: string;
   private readonly credits: number;
@@ -11,10 +12,10 @@ export class Course {
   private readonly studyPlan: string;
   private readonly cycle: string;
   private readonly selectedSections: Set<CourseSection>;
-  private visible: boolean = true;
 
-  constructor(id: string, name: string, credits: number, teacher: string[], school: string, studyPlan: string, cycle: string, section?: CourseSection) {
+  constructor(id: string, key: string, name: string, credits: number, teacher: string[], school: string, studyPlan: string, cycle: string, section?: CourseSection) {
     this.id = id
+    this.key = key
     this.name = name
     this.credits = credits
     this.teachers = teacher
@@ -23,7 +24,6 @@ export class Course {
     this.studyPlan = studyPlan
     this.cycle = cycle
     this.selectedSections = new Set()
-    this.visible = true // default visibility is true
     if (section) this.sections.add(section)
   }
 
@@ -70,16 +70,6 @@ export class Course {
     return this.selectedSections.size === 0
   }
 
-  getVisibility(): boolean {
-    return this.visible
-  }
-
-  setVisibility(visibility: boolean) {
-    // change visibility of the course and all its sections
-    this.visible = visibility
-    this.sections.forEach(section => section.courseVisible = visibility)
-  }
-
   getSections(): CourseSection[] {
     return Array.from(this.sections)
   }
@@ -90,6 +80,10 @@ export class Course {
 
   getId(): string {
     return this.id
+  }
+
+  getKey(): string {
+    return this.key
   }
 
   getName(): string {
