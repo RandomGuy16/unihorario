@@ -7,11 +7,7 @@ import { useCurriculum } from "@/app/providers/useCurriculum";
 import { SelectedFilters } from "@/app/models/SelectedFilters";
 import { CourseId } from "@/app/models/types";
 import {useFilters} from "@/app/providers/useFilters";
-
-
-export function generateCourseKey(year: string | number, id: string, name: string, career: string): string {
-  return `${year}-${id}-${name}-${career}`;
-}
+import { logger } from "@/app/utils/logger";
 
 // Global interface for trackers selection operations
 export interface SectionSelectionOps {
@@ -141,12 +137,35 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
 
   const getCourseList = (): Course[] => { return coursesInCourseList }
 
+  const getSectionOwnerCourse = (sections: CourseSection[]): Course | undefined => {
+    const courseKey = sections[0]?.courseKey
+    if (!courseKey) {
+      logger.warn("Trying to update sections without a course key")
+      return undefined
+    }
+
+    const course = courseRegistry.get(courseKey)
+    if (!course) {
+      logger.warn("Trying to update sections for a course that is not in the registry", {
+        courseKey,
+        sectionCount: sections.length
+      })
+      return undefined
+    }
+
+    return course
+  }
+
   // add a section
   const renderSections = (
     sections: CourseSection | CourseSection[], hover?: boolean
   ) => {
     sections = Array.isArray(sections) ? sections : [sections]
-    const course = courseRegistry.get(sections[0].courseKey)!
+    if (sections.length === 0) return
+
+    const course = getSectionOwnerCourse(sections)
+    if (!course) return
+
     // add to the preview sections
     if (hover) {
       setPreviewSections(prev => {
@@ -175,7 +194,10 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     sections: CourseSection | CourseSection[], hover?: boolean
   ) => {
     sections = Array.isArray(sections) ? sections : [sections]
-    const course = courseRegistry.get(sections[0].courseKey)!
+    if (sections.length === 0) return
+
+    const course = getSectionOwnerCourse(sections)
+    if (!course) return
 
     if (hover) {
       // remove from the preview sections
@@ -214,7 +236,11 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
 
   // functions to set the visibility of courses
   const setCourseInvisible = (courseKey: string) => {
-    courseRegistry.get(courseKey)!.setVisibility(false)
+    if (!courseRegistry.has(courseKey)) {
+      logger.warn("Trying to hide a course that is not in the registry", { courseKey })
+      return
+    }
+
     // trigger a re-render with this
     setVisibleCourses(prev => {
       const temp = new Set(prev)
@@ -224,7 +250,11 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     updateSelectedSections(prev => prev)
   }
   const setCourseVisible = (courseKey: string) => {
-    courseRegistry.get(courseKey)!.setVisibility(true)
+    if (!courseRegistry.has(courseKey)) {
+      logger.warn("Trying to show a course that is not in the registry", { courseKey })
+      return
+    }
+
     // trigger a re-render with this
     setVisibleCourses(prev => {
       const temp = new Set(prev)

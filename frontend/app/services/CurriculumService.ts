@@ -1,6 +1,6 @@
 import { UniversityCurriculum } from "@/app/models/UniversityCurriculum";
 import { Course } from "@/app/models/Course";
-import { generateCourseKey } from "@/app/providers/useCourseCache";
+import { generateCourseKey } from "@/app/utils/courseKey";
 import { AwaitJobResponse, SubmitCurriculumResponse } from "@/app/models/dto";
 
 export const CurriculumService = {

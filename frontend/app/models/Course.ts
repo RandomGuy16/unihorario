@@ -12,7 +12,6 @@ export class Course {
   private readonly studyPlan: string;
   private readonly cycle: string;
   private readonly selectedSections: Set<CourseSection>;
-  private visible: boolean = true;
 
   constructor(id: string, key: string, name: string, credits: number, teacher: string[], school: string, studyPlan: string, cycle: string, section?: CourseSection) {
     this.id = id
@@ -25,7 +24,6 @@ export class Course {
     this.studyPlan = studyPlan
     this.cycle = cycle
     this.selectedSections = new Set()
-    this.visible = true // default visibility is true
     if (section) this.sections.add(section)
   }
 
@@ -70,14 +68,6 @@ export class Course {
 
   areAllSectionsUnselected(): boolean {
     return this.selectedSections.size === 0
-  }
-
-  getVisibility(): boolean {
-    return this.visible
-  }
-
-  setVisibility(visibility: boolean) {
-    this.visible = visibility
   }
 
   getSections(): CourseSection[] {
