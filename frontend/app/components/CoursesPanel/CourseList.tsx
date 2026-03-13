@@ -73,7 +73,6 @@ function CourseList() {
               </div>
 
               <section className="text-label w-full h-fit my-4">
-                <span className="inline-block mb-2">Filtrar por:</span>
                 <SearchFilter />
               </section>
               <section className="flex flex-col justify-start items-stretch w-full min-h-20 h-fit my-4">

@@ -107,9 +107,16 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   // useMemo hook that reloads the course list each time its parameters change
   const coursesInCourseList = useMemo(() => {
     // get all CourseIds necessary
-    const byCareer   : Set<CourseId> = coursesByCareer.get(selection.career) ?? new Set<CourseId>()
-    const byCycle    : Set<CourseId> = coursesByCycle.get(selection.cycle) ?? new Set<CourseId>()
-    const byStudyPlan: Set<CourseId> = coursesByStudyPlan.get(selection.year) ?? new Set<CourseId>()
+    const byCareer   : Set<CourseId> = selection.career !== 'todas'
+      ? (coursesByCareer.get(selection.career) ?? new Set<CourseId>())
+      : new Set<CourseId>(courseRegistry.keys())
+    const byCycle    : Set<CourseId> = selection.cycle !== 'todos'
+      ? (coursesByCycle.get(selection.cycle) ?? new Set<CourseId>())
+      : new Set<CourseId>(courseRegistry.keys())
+    const byStudyPlan: Set<CourseId> = selection.year !== 'todos'
+      ? (coursesByStudyPlan.get(selection.year) ?? new Set<CourseId>())
+      : new Set<CourseId>(courseRegistry.keys())
+
     // intersect all sets to get the courses
     const byTriplet = byCareer.intersection(byCycle).intersection(byStudyPlan)
     return Array.from(byTriplet).map(

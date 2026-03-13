@@ -63,6 +63,7 @@ function SearchFilter() {
           <UploadCurriculumModal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} />
         </div>
       </div>
+      <span className="inline-block mb-2">Filtrar por:</span>
       <div>
         Ciclo: <Select
           instanceId={"cycle-select"}

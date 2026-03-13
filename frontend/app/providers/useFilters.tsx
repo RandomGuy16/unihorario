@@ -7,15 +7,14 @@ import {Catalog} from "@/app/models/Catalog";
 import {areEqualArray} from "@/app/utils/misc";
 
 const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: ""}
-const INITIAL_AVAILABLE: FilterOptions = {years: [], careers: [], cycles: []}
+const INITIAL_AVAILABLE: FilterOptions = {years: ['todos'], careers: ['todas'], cycles: ['todos']}
 
 function computeAvailableOptions(catalog: Catalog, currentCareer: string = ""): FilterOptions {
   const careers: string[] = Object.keys(catalog.careers)
-  if (!careers.length) return INITIAL_AVAILABLE
 
   const selectedCareer = careers.includes(currentCareer) ? currentCareer : careers[0]
-  const years: string[] = catalog.careers[selectedCareer].studyPlans
-  const cycles: string[] = catalog.careers[selectedCareer].cycles
+  const years: string[] = [...catalog.careers[selectedCareer].studyPlans, ...INITIAL_AVAILABLE.years]
+  const cycles: string[] = [...catalog.careers[selectedCareer].cycles, ...INITIAL_AVAILABLE.cycles]
 
   return {
     careers,
