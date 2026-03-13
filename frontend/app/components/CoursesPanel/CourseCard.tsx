@@ -1,100 +1,13 @@
 import { ChevronDown, ChevronRight, Eye, EyeOff } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react'
 import CourseCardSection from '@/app/components/CoursesPanel/CourseCardSection';
 import { CourseSection } from "@/app/models/CourseSection";
 import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
 import { useTheme } from "@/app/providers/useTheme";
-import {useCourseCache} from "@/app/providers/useCourseCache";
-
-
-interface CourseCardCheckboxAllProps {
-  course: Course;
-  colorPair: CourseColor;
-  checked: boolean;
-}
-
-function withAlpha(hexColor: string, alpha: string): string {
-  return hexColor.length === 9 ? `${hexColor.slice(0, 7)}${alpha}` : `${hexColor}${alpha}`
-}
-
-function CourseCardAllSectionsCheckbox({ course, colorPair, checked }: CourseCardCheckboxAllProps) {
-  const { renderSections, hideSections, previewSections } = useCourseCache()
-  // function to handle the click event of the checkbox
-  const handleClick = () => {
-    if (!checked) renderSections(course.getSections())
-    else hideSections(course.getSections())
-  }
-  const handleMouseEnter = () => {
-    // just show the sections in a manner that they don't feel already selected
-    renderSections(course.getSections(), true)
-  }
-  const handleMouseLeave = () => {
-    // like previously said but inverted
-    hideSections(course.getSections(), true)
-  }
-
-  const courseSections = course.getSections()
-  const hasPreviewedSections = courseSections.some((section) => previewSections.has(section))
-  const isPreviewedAndSelected = hasPreviewedSections && checked
-
-  const buttonTextColor = isPreviewedAndSelected || checked
-    ? colorPair.background
-    : colorPair.text
-
-  const buttonBackgroundColor = isPreviewedAndSelected
-    ? withAlpha(colorPair.text, "F5")
-    : checked
-      ? colorPair.text
-      : hasPreviewedSections
-        ? withAlpha(colorPair.background, "8A")
-        : colorPair.background
-
-  const buttonBorderColor = isPreviewedAndSelected
-    ? colorPair.text
-    : checked
-      ? colorPair.text
-      : hasPreviewedSections
-        ? withAlpha(colorPair.text, "B3")
-        : colorPair.text
-
-  const buttonShadow = isPreviewedAndSelected
-    ? `0 0 0 1px ${withAlpha(colorPair.background, "4D")}, 0 12px 28px ${withAlpha(colorPair.text, "38")}`
-    : hasPreviewedSections
-      ? `0 8px 18px ${withAlpha(colorPair.text, "22")}`
-      : checked
-        ? `0 6px 14px ${withAlpha(colorPair.text, "22")}`
-        : undefined
-
-  return (
-    <div
-      className="flex flex-row justify-start items-center"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <label
-        className="
-        py-1 px-2 mr-1 font-normal text-micro sm:text-caption lg:text-body duration-100 ease-linear select-none
-        rounded-md shadow-elev-1 border cursor-pointer"
-        data-checked={checked}
-        style={{
-          borderColor: buttonBorderColor,
-          borderStyle: isPreviewedAndSelected ? 'dashed' : 'solid',
-          color: buttonTextColor,
-          backgroundColor: buttonBackgroundColor,
-          boxShadow: buttonShadow,
-          opacity: hasPreviewedSections && !checked ? 0.9 : 1
-        }}>
-        <input
-          className="hidden"
-          type="checkbox"
-          checked={checked}
-          onChange={handleClick} />
-        todas
-      </label>
-    </div>
-  )
-}
+import { useCourseCache } from "@/app/providers/useCourseCache";
+import { CourseCardAllSectionsCheckbox } from "@/app/components/CoursesPanel/CourseCardAllSectionsCheckbox";
 
 
 interface CourseCardProps {
@@ -138,7 +51,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
   return (
     <div
       className="
-      flex-1 w-full text-left text-body my-2 border rounded-md py-2 px-4
+      flex-1 w-full text-left text-body border rounded-md py-2 px-4
       shadow-elev-2 select-none
       transform transition-all duration-300 ease-in-out"
       id={course.getId()}
@@ -150,7 +63,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
     >
       <div className="flex flex-row justify-between items-start w-full cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
         <div className="flex-1" >
-          <h3 className="text-label lg:text-title">{course.getName()}</h3>
+          <h3 className="text-label lg:text-label">{course.getName()}</h3>
           <span className="">créditos: {course.getCredits()}<br />{course.getSchool()}</span>
         </div>
         <div className="flex flex-col justify-center items-center gap-2">
@@ -161,10 +74,16 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
           )}
         </div>
       </div>
-
-      {/* This maps the sections so we can click them */}
-      {isOpen && (
-        <>
+      <AnimatePresence initial={false}>
+        {/* This maps the sections so we can click them */}
+        {isOpen && (<motion.div
+          key="coursecard-sections"
+          initial={{opacity: 0, height: 0, y: -6}}
+          animate={{opacity: 1, height: "auto", y: 0}}
+          exit={{opacity: 0, height: 0, y: -6}}
+          transition={{duration: 0.2, ease: "easeOut"}}
+          className="w-full overflow-hidden"
+        >
           <hr className="mb-2" style={{ borderColor: textColor }} />
           <div className="flex flex-row justify-between items-center mb-1">
             <div className='flex flex-row items-center gap-1'>
@@ -180,10 +99,10 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
             </div>
             {/* </button> */}
             <button className="h-4 cursor-pointer"
-              onClick={() => {
-                // e.stopPropagation()
-                handleCourseVisibility()
-              }}
+                    onClick={() => {
+                      // e.stopPropagation()
+                      handleCourseVisibility()
+                    }}
             >
               {isCourseVisible ? (
                 <Eye className="w-4 h-4" style={{ color: textColor }} />
@@ -194,8 +113,8 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
           </div>
           <div
             className="
-          flex flex-col justify-start items-center mt-1 w-full overflow-x-auto scrollbar-thin
-          scrollbar-thumb-border scrollbar-track-surface-muted">
+        flex flex-col justify-start items-center mt-1 w-full overflow-x-auto scrollbar-thin
+        scrollbar-thumb-border scrollbar-track-surface-muted">
             {/* creates a button for every group in classGroups */}
             {course.getSections().map((section: CourseSection, index: number) =>
               <CourseCardSection
@@ -208,8 +127,9 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
               </CourseCardSection>
             )}
           </div>
-        </>)
-      }
+        </motion.div>)
+        }
+      </AnimatePresence>
     </div >
   )
 }

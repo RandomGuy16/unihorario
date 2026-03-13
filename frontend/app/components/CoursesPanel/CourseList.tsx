@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import {BookMarked, Sparkles} from 'lucide-react'
+import { BookMarked } from 'lucide-react'
 import Tabs from './Tabs/Tabs'
 import CourseCard from './CourseCard'
 import SearchFilter from './SearchFilter/SearchFilter'
@@ -79,7 +79,7 @@ function CourseList() {
                   <span className="text-caption uppercase tracking-widest">Cursos</span>
                 </div>
                 <div
-                  className="flex flex-col justify-start items-center flex-1 p-2
+                  className="flex flex-col justify-start items-center flex-1 gap-2 p-2
                     border-2 border-border rounded-md overflow-y-auto
                     scrollbar-thin scrollbar-thumb-border scrollbar-track-surface-muted"
                 >
