@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import {BookMarked, Sparkles} from 'lucide-react'
+import { BookMarked } from 'lucide-react'
 import Tabs from './Tabs/Tabs'
 import CourseCard from './CourseCard'
 import SearchFilter from './SearchFilter/SearchFilter'
