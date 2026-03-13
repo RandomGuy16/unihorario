@@ -51,7 +51,13 @@ export function FiltersContextProvider({children} : {children: ReactNode}) {
   const updateSelection =  useCallback(
     (updates: Partial<SelectedFilters>) => setSelection(prev => {
       const next = {...prev, ...updates}
-      if (next.year === prev.year && next.cycle === prev.cycle && next.career === prev.career) {
+      if (
+        next.year === prev.year &&
+        next.cycle === prev.cycle &&
+        next.career === prev.career &&
+        next.selected === prev.selected &&
+        next.visible === prev.visible
+      ) {
         return prev
       }
       return next

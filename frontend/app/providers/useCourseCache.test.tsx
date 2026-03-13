@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, ReactNode } from "react";
+import { act, ReactNode, useEffect } from "react";
 import { createRoot, Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Course } from "@/app/models/Course";
@@ -163,7 +163,12 @@ let root: Root | null = null;
 let container: HTMLDivElement | null = null;
 
 function Consumer() {
-  latestContext = useCourseCache();
+  const context = useCourseCache();
+
+  useEffect(() => {
+    latestContext = context;
+  }, [context]);
+
   return null;
 }
 
