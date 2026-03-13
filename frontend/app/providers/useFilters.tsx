@@ -1,10 +1,10 @@
 "use client"
-import {createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState} from "react"
-import {FilterOptions, SelectedFilters} from "@/app/models/SelectedFilters"
-import {useCurriculum} from "@/app/providers/useCurriculum";
-import {useCatalog} from "@/app/providers/useCatalog";
-import {Catalog} from "@/app/models/Catalog";
-import {areEqualArray} from "@/app/utils/misc";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { FilterOptions, SelectedFilters } from "@/app/models/SelectedFilters"
+import { useCurriculum } from "@/app/providers/useCurriculum";
+import { useCatalog } from "@/app/providers/useCatalog";
+import { Catalog } from "@/app/models/Catalog";
+import { areEqualArray } from "@/app/utils/misc";
 
 const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: ""}
 const INITIAL_AVAILABLE: FilterOptions = {years: ['todos'], careers: ['todas'], cycles: ['todos']}

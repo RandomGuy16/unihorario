@@ -103,6 +103,26 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     })
     return map
   }, [courseRegistry])
+  const coursesBySelected = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    courseRegistry.forEach((course, key) => {
+      // if at least one section is selected, go for it
+      if (!course.areAllSectionsUnselected()) {
+        if (!map.has(key)) map.set(key, new Set())
+        map.get(key)!.add(key)
+      }
+    })
+    return map
+  }, [courseRegistry])
+  const coursesByVisibility = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    courseRegistry.forEach((_, key) => {
+      const isVisible: boolean = visibleCourses.has(key)
+      if (!map.has(isVisible.toString())) map.set(isVisible.toString(), new Set())
+      map.get(isVisible.toString())!.add(key)
+    })
+    return map
+  }, [courseRegistry, visibleCourses])
 
   // useMemo hook that reloads the course list each time its parameters change
   const coursesInCourseList = useMemo(() => {
