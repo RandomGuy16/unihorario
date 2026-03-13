@@ -51,7 +51,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
   return (
     <div
       className="
-      flex-1 w-full text-left text-body my-2 border rounded-md py-2 px-4
+      flex-1 w-full text-left text-body border rounded-md py-2 px-4
       shadow-elev-2 select-none
       transform transition-all duration-300 ease-in-out"
       id={course.getId()}

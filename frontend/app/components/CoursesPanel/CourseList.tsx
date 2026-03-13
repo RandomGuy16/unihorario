@@ -79,7 +79,7 @@ function CourseList() {
                   <span className="text-caption uppercase tracking-widest">Cursos</span>
                 </div>
                 <div
-                  className="flex flex-col justify-start items-center flex-1 p-2
+                  className="flex flex-col justify-start items-center flex-1 gap-2 p-2
                     border-2 border-border rounded-md overflow-y-auto
                     scrollbar-thin scrollbar-thumb-border scrollbar-track-surface-muted"
                 >
