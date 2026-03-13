@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { BookMarked } from 'lucide-react'
+import { useDeferredValue, useMemo, useState } from 'react'
+import { BookMarked, Search } from 'lucide-react'
 import Tabs from './Tabs/Tabs'
 import CourseCard from './CourseCard'
 import SearchFilter from './SearchFilter/SearchFilter'
@@ -40,11 +40,24 @@ function CourseList() {
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { courseRegistry, getCoursesByFilters } = useCourseCache()
   const { selection } = useFilters()
+  const [searchTerm, setSearchTerm] = useState("")
+  const deferredSearchTerm = useDeferredValue(searchTerm)
 
-  const coursesToRender = useMemo(() => {
+  const filteredCourses = useMemo(() => {
     if (courseRegistry.size === 0) return []
     return getCoursesByFilters(selection)
   }, [courseRegistry, selection, getCoursesByFilters])
+
+  const coursesToRender = useMemo(() => {
+    const normalizedSearch = deferredSearchTerm.trim().toLowerCase()
+    if (!normalizedSearch) return filteredCourses
+
+    return filteredCourses.filter((course) => {
+      const courseName = course.getName().toLowerCase()
+      const courseId = course.getId().toLowerCase()
+      return courseName.includes(normalizedSearch) || courseId.includes(normalizedSearch)
+    })
+  }, [deferredSearchTerm, filteredCourses])
 
   return (
     <div className={`
@@ -77,13 +90,29 @@ function CourseList() {
                 <div className="mt-3 flex w-full items-center gap-2 text-foreground-muted">
                   <BookMarked className="h-4 w-4 text-accent" />
                   <span className="text-caption uppercase tracking-widest">Cursos</span>
+                  <label className="ml-auto flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-surface-muted px-2 py-1 text-foreground">
+                    <Search className="h-4 w-4 shrink-0 text-foreground-muted" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Buscar curso"
+                      className="min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-foreground-muted/50"
+                    />
+                  </label>
                 </div>
                 <div
                   className="flex flex-col justify-start items-center flex-1 gap-2 p-2
                     border-2 border-border rounded-md overflow-y-auto
                     scrollbar-thin scrollbar-thumb-border scrollbar-track-surface-muted"
                 >
-                  {coursesToRender && renderCoursesSidebar(coursesToRender)}
+                  {coursesToRender.length > 0
+                    ? renderCoursesSidebar(coursesToRender)
+                    : (
+                      <div className="flex w-full flex-1 items-center justify-center rounded-md border border-dashed border-border px-3 py-6 text-center text-body text-foreground-muted">
+                        No hay cursos que coincidan con la busqueda.
+                      </div>
+                    )}
                 </div>
               </section>
             </>

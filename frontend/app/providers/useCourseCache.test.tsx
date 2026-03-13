@@ -363,6 +363,40 @@ describe("useCourseCache", () => {
     expect(latestContext!.selectedCoursesCount).toBe(0);
   });
 
+  it("clears preview sections when a hovered course disappears from the selected-only filter", async () => {
+    const fixture = makeFixtureCourses();
+    mockCoursesPayload = fixture.coursesPayload;
+    mockSelection = {
+      career: "Engineering",
+      cycle: "todos",
+      year: "todos",
+      selected: true,
+      visible: true
+    };
+    mockFilterBySelection = true;
+
+    await renderProvider();
+
+    await act(async () => {
+      latestContext!.renderSections(fixture.calcSections[0]);
+    });
+    expect(latestContext!.getCoursesByFilters(mockSelection).map((course) => course.getName())).toEqual(["Calculus"]);
+
+    await act(async () => {
+      latestContext!.renderSections(fixture.calcSections[0], true);
+    });
+    expect(latestContext!.previewSections.has(fixture.calcSections[0])).toBe(true);
+    expect(latestContext!.visibleSections.has(fixture.calcSections[0])).toBe(true);
+
+    await act(async () => {
+      latestContext!.hideSections(fixture.calcSections[0]);
+    });
+
+    expect(latestContext!.getCoursesByFilters(mockSelection)).toEqual([]);
+    expect(latestContext!.previewSections.has(fixture.calcSections[0])).toBe(false);
+    expect(latestContext!.visibleSections.has(fixture.calcSections[0])).toBe(false);
+  });
+
   it("marks courses from later curriculum payload updates as visible by default", async () => {
     const fixture = makeFixtureCourses();
     mockCoursesPayload = new Map<string, Course>([

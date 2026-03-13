@@ -107,9 +107,9 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   }, [courseRegistry])
   const coursesByIsSelected = useMemo(() => {
     const map = new Map<boolean, Set<string>>()
+    const selectedCourseKeys = new Set(Array.from(selectedSections, (section) => section.courseKey))
     courseRegistry.forEach((course, key) => {
-      // if at least one section is selected, go for it
-      const isSelected: boolean = !course.areAllSectionsUnselected()
+      const isSelected: boolean = selectedCourseKeys.has(key)
       if (!map.has(isSelected)) map.set(isSelected, new Set())
       map.get(isSelected)!.add(key)
     })
@@ -156,12 +156,31 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
 
   // selected courses count
   const selectedCoursesCount = useMemo(() => {
+    const selectedCourseKeys = new Set(Array.from(selectedSections, (section) => section.courseKey))
     let count = 0
     coursesInCourseList.forEach((course: Course) => {
-      if (!course.areAllSectionsUnselected()) count++
+      if (selectedCourseKeys.has(course.getKey())) count++
     })
     return count
   }, [coursesInCourseList, selectedSections])
+
+  useEffect(() => {
+    const visibleCourseKeysInList = new Set(coursesInCourseList.map((course) => course.getKey()))
+    setPreviewSections(prev => {
+      let changed = false
+      const next = new Set<CourseSection>()
+
+      prev.forEach(section => {
+        if (visibleCourseKeysInList.has(section.courseKey)) {
+          next.add(section)
+        } else {
+          changed = true
+        }
+      })
+
+      return changed ? next : prev
+    })
+  }, [coursesInCourseList])
 
   // Helper functions to update maps/sets (trigger React state)
   const updateSelectedSections = (updater: (prev: Set<CourseSection>) => Set<CourseSection>) => {
