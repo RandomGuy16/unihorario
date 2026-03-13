@@ -6,8 +6,10 @@ import { useCatalog } from "@/app/providers/useCatalog";
 import { Catalog } from "@/app/models/Catalog";
 import { areEqualArray } from "@/app/utils/misc";
 
-const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: ""}
-const INITIAL_AVAILABLE: FilterOptions = {years: ['todos'], careers: ['todas'], cycles: ['todos']}
+const INITIAL_SELECTION: SelectedFilters = {year: "", cycle: "", career: "", selected: true, visible: true}
+const INITIAL_AVAILABLE: FilterOptions = {
+  years: ['todos'], careers: ['todas'], cycles: ['todos'], areSelected: [true, false], areVisible: [true, false]
+}
 
 function computeAvailableOptions(catalog: Catalog, currentCareer: string = ""): FilterOptions {
   const careers: string[] = Object.keys(catalog.careers)
@@ -19,7 +21,9 @@ function computeAvailableOptions(catalog: Catalog, currentCareer: string = ""): 
   return {
     careers,
     years: Array.from(new Set(years)),
-    cycles: Array.from(new Set(cycles))
+    cycles: Array.from(new Set(cycles)),
+    areSelected: INITIAL_AVAILABLE.areSelected,
+    areVisible: INITIAL_AVAILABLE.areVisible
   }
 }
 
@@ -28,6 +32,10 @@ export interface FiltersContextType {
   available: FilterOptions;
   updateSelection: (updates: Partial<SelectedFilters>) => void;
   updateAvailableOptions: (catalog: Catalog, currentCareer?: string) => void;
+  filterBySelection: boolean;
+  filterByVisibility: boolean;
+  setFilterBySelection: (value: boolean) => void;
+  setFilterByVisibility: (value: boolean) => void;
 }
 
 const FiltersContext = createContext<FiltersContextType | undefined>(undefined)
@@ -35,6 +43,8 @@ const FiltersContext = createContext<FiltersContextType | undefined>(undefined)
 export function FiltersContextProvider({children} : {children: ReactNode}) {
   const [selection, setSelection] = useState<SelectedFilters>(INITIAL_SELECTION)
   const [available, setAvailable] = useState<FilterOptions>(INITIAL_AVAILABLE)
+  const [filterBySelection, setFilterBySelection] = useState<boolean>(false)
+  const [filterByVisibility, setFilterByVisibility] = useState<boolean>(false)
   const { fetchCurriculum } = useCurriculum()
   const { data: catalog } = useCatalog()
 
@@ -95,8 +105,12 @@ export function FiltersContextProvider({children} : {children: ReactNode}) {
     selection,
     available,
     updateSelection,
-    updateAvailableOptions
-  }), [selection, available, updateSelection, updateAvailableOptions])
+    updateAvailableOptions,
+    filterBySelection,
+    filterByVisibility,
+    setFilterBySelection,
+    setFilterByVisibility
+  }), [selection, available, updateSelection, updateAvailableOptions, filterBySelection, filterByVisibility])
 
   return (
     <>

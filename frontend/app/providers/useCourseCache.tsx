@@ -6,7 +6,7 @@ import { CourseSection } from "@/app/models/CourseSection"
 import { useCurriculum } from "@/app/providers/useCurriculum";
 import { SelectedFilters } from "@/app/models/SelectedFilters";
 import { CourseId } from "@/app/models/types";
-import {useFilters} from "@/app/providers/useFilters";
+import { useFilters } from "@/app/providers/useFilters";
 import { logger } from "@/app/utils/logger";
 
 // Global interface for trackers selection operations
@@ -35,9 +35,11 @@ const CourseCacheContext = createContext<CourseCacheContextType | undefined>(und
 export function CourseCacheContextProvider({ children }: { children: ReactNode }) {
   const { coursesPayload } = useCurriculum()
   const { addCredits, restCredits, resetCredits } = useCredits()
-  const { selection } = useFilters()
+  const { selection, filterBySelection, filterByVisibility } = useFilters()
   const [courseRegistry, setCourseRegistry] = useState<Map<string, Course>>(() => coursesPayload || new Map<string, Course>())
-  const [visibleCourses, setVisibleCourses] = useState<Set<CourseId>>(new Set())
+  const [visibleCourses, setVisibleCourses] = useState<Set<CourseId>>(
+    () => new Set(coursesPayload?.keys() ?? [])
+  )
   const [selectedSections, setSelectedSections] = useState<Set<CourseSection>>(new Set())
   const [previewSections, setPreviewSections] = useState<Set<CourseSection>>(new Set())
 
@@ -57,7 +59,7 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
       setVisibleCourses(prev => {
         const temp = new Set(prev)
         coursesPayload.forEach((_, key) => {
-          if (!courseRegistry.has(key)) temp.add(key)
+          temp.add(key)
         })
         return temp
       })
@@ -103,23 +105,22 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     })
     return map
   }, [courseRegistry])
-  const coursesBySelected = useMemo(() => {
-    const map = new Map<string, Set<string>>()
+  const coursesByIsSelected = useMemo(() => {
+    const map = new Map<boolean, Set<string>>()
     courseRegistry.forEach((course, key) => {
       // if at least one section is selected, go for it
-      if (!course.areAllSectionsUnselected()) {
-        if (!map.has(key)) map.set(key, new Set())
-        map.get(key)!.add(key)
-      }
+      const isSelected: boolean = !course.areAllSectionsUnselected()
+      if (!map.has(isSelected)) map.set(isSelected, new Set())
+      map.get(isSelected)!.add(key)
     })
     return map
-  }, [courseRegistry])
+  }, [courseRegistry, selectedSections])
   const coursesByVisibility = useMemo(() => {
-    const map = new Map<string, Set<string>>()
+    const map = new Map<boolean, Set<string>>()
     courseRegistry.forEach((_, key) => {
       const isVisible: boolean = visibleCourses.has(key)
-      if (!map.has(isVisible.toString())) map.set(isVisible.toString(), new Set())
-      map.get(isVisible.toString())!.add(key)
+      if (!map.has(isVisible)) map.set(isVisible, new Set())
+      map.get(isVisible)!.add(key)
     })
     return map
   }, [courseRegistry, visibleCourses])
@@ -127,22 +128,31 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   // useMemo hook that reloads the course list each time its parameters change
   const coursesInCourseList = useMemo(() => {
     // get all CourseIds necessary
-    const byCareer   : Set<CourseId> = selection.career !== 'todas'
-      ? (coursesByCareer.get(selection.career) ?? new Set<CourseId>())
-      : new Set<CourseId>(courseRegistry.keys())
+    const byCareer   : Set<CourseId> = coursesByCareer.get(selection.career) ?? new Set<CourseId>()
     const byCycle    : Set<CourseId> = selection.cycle !== 'todos'
       ? (coursesByCycle.get(selection.cycle) ?? new Set<CourseId>())
       : new Set<CourseId>(courseRegistry.keys())
     const byStudyPlan: Set<CourseId> = selection.year !== 'todos'
       ? (coursesByStudyPlan.get(selection.year) ?? new Set<CourseId>())
       : new Set<CourseId>(courseRegistry.keys())
+    const bySelection: Set<CourseId> = filterBySelection
+      ? (coursesByIsSelected.get(selection.selected) ?? new Set<CourseId>())
+      : new Set<CourseId>(courseRegistry.keys())
+    const byVisibility: Set<CourseId> = filterByVisibility
+      ? (coursesByVisibility.get(selection.visible) ?? new Set<CourseId>())
+      : new Set<CourseId>(courseRegistry.keys())
 
     // intersect all sets to get the courses
-    const byTriplet = byCareer.intersection(byCycle).intersection(byStudyPlan)
+    const byTriplet = byCareer
+      .intersection(byCycle)
+      .intersection(byStudyPlan)
+      .intersection(bySelection)
+      .intersection(byVisibility)
+
     return Array.from(byTriplet).map(
       (courseId: CourseId) => courseRegistry.get(courseId)!
     )
-  }, [courseRegistry, coursesByCareer, coursesByCycle, coursesByStudyPlan, selection])
+  }, [courseRegistry, coursesByCareer, coursesByCycle, coursesByIsSelected, coursesByStudyPlan, coursesByVisibility, filterBySelection, filterByVisibility, selection.career, selection.cycle, selection.selected, selection.visible, selection.year])
 
   // selected courses count
   const selectedCoursesCount = useMemo(() => {

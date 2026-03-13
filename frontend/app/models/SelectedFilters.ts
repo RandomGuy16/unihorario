@@ -6,12 +6,16 @@ export interface FilterOptions {
   years: string[];
   cycles: string[];
   careers: string[];
+  areSelected: boolean[];
+  areVisible: boolean[];
 }
 
 export interface SelectedFilters {
   year: string;
   cycle: string;
   career: string;
+  selected: boolean;
+  visible: boolean;
 }
 
 // interface used by SearchFilter in CourseList.tsx and SearchFilter.tsx
