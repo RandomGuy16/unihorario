@@ -27,7 +27,7 @@ function Tabs({ tabs, defaultActiveTab }: Readonly<TabsProps>) {
 				</button>
 			))}
 		</nav>
-		<div className="flex flex-col justify-start items-stretch w-full h-full">
+		<div className="flex flex-col justify-start items-stretch gap-2 w-full h-full">
 			{tabs.find(tab => tab.id === activeTab)?.content}
 		</div>
 	</div>

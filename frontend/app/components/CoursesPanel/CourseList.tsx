@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import {BookMarked, Sparkles} from 'lucide-react'
 import Tabs from './Tabs/Tabs'
 import CourseCard from './CourseCard'
 import SearchFilter from './SearchFilter/SearchFilter'
@@ -8,8 +9,6 @@ import { useResponsive } from "@/app/providers/useResponsive";
 import { useSidebar } from "@/app/providers/useSidebar";
 import { useCourseCache } from "@/app/providers/useCourseCache";
 import { useFilters } from "@/app/providers/useFilters";
-// import { useCurriculum } from "@/app/reducers/useCurriculum";
-// import { generateCourseKey } from "@/app/providers/useCourseCache";
 
 
 function renderCoursesSidebar(courses: Course[]) {
@@ -49,8 +48,7 @@ function CourseList() {
 
   return (
     <div className={`
-      w-full h-full mx-auto p-4 rounded-r-lg flex flex-col justify-start items-stretch
-      shadow-elev-2 bg-surface
+      w-full h-full mx-auto p-4 rounded-r-lg flex flex-col justify-start items-stretch shadow-elev-2 bg-surface
       transform transition-transform duration-300 ease-in-out
       ${(isMobile)
         ? `fixed top-0 left-0 max-w-sm z-50 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
@@ -69,14 +67,17 @@ function CourseList() {
                   onClick={() => toggleSidebar()}>
                   {'>'}
                 </button>}
-
               </div>
 
-              <section className="text-label w-full h-fit my-4">
+              <section className="text-label w-full h-fit">
                 <SearchFilter />
               </section>
-              <section className="flex flex-col justify-start items-stretch w-full min-h-20 h-fit my-4">
-                <span className="inline-block text-label mb-2">Cursos</span>
+
+              <section className="flex flex-col justify-start items-stretch gap-1 w-full min-h-20 h-fit">
+                <div className="mt-3 flex w-full items-center gap-2 text-foreground-muted">
+                  <BookMarked className="h-4 w-4 text-accent" />
+                  <span className="text-caption uppercase tracking-widest">Cursos</span>
+                </div>
                 <div
                   className="flex flex-col justify-start items-center flex-1 p-2
                     border-2 border-border rounded-md overflow-y-auto
