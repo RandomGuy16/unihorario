@@ -21,7 +21,7 @@ interface ScheduleEventCardProps {
 }
 function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const { previewSections, selectedSections, courseRegistry, hideSections, setCourseInvisible } = useCourseCache()
+  const { previewSections, selectedSections, hideSections, setCourseInvisible } = useCourseCache()
   const { theme } = useTheme()
 
   // get the color pair for the event card
@@ -46,9 +46,7 @@ function ScheduleEventCard({ schedule, section, positionStyle }: ScheduleEventCa
     hideSections(section)
   }
   const handleHideCourse = () => {
-    const course = courseRegistry.get(section.courseKey)
-    if (!course) return
-    setCourseInvisible(course)
+    setCourseInvisible(section.courseKey)
   }
 
   return (

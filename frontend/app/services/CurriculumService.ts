@@ -48,6 +48,7 @@ export const CurriculumService = {
           if (!course) {
             course = new Course(
               section.assignmentId,
+              courseKey,
               section.assignment,
               section.credits,
               Array.from(teachers),

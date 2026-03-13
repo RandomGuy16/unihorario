@@ -19,8 +19,8 @@ export interface SectionSelectionOps {
   hideSections: (sections: CourseSection | CourseSection[], preview?: boolean) => void;
   hasSection: (section: CourseSection) => boolean;
   clearSections: () => void;
-  setCourseVisible: (course: Course) => void;
-  setCourseInvisible: (course: Course) => void;
+  setCourseVisible: (courseKey: string) => void;
+  setCourseInvisible: (courseKey: string) => void;
   getCoursesByFilters: (filters: SelectedFilters) => Course[];
 }
 
@@ -60,7 +60,7 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
       // add new courses to visibleCourses
       setVisibleCourses(prev => {
         const temp = new Set(prev)
-        coursesPayload.forEach((course, key) => {
+        coursesPayload.forEach((_, key) => {
           if (!courseRegistry.has(key)) temp.add(key)
         })
         return temp
@@ -213,14 +213,8 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
   }
 
   // functions to set the visibility of courses
-  const setCourseInvisible = (course: Course) => {
-    course.setVisibility(false)
-    const courseKey = generateCourseKey(
-      course.getStudyPlan(),
-      course.getId(),
-      course.getName(),
-      course.getSchool()
-    )
+  const setCourseInvisible = (courseKey: string) => {
+    courseRegistry.get(courseKey)!.setVisibility(false)
     // trigger a re-render with this
     setVisibleCourses(prev => {
       const temp = new Set(prev)
@@ -229,14 +223,8 @@ export function CourseCacheContextProvider({ children }: { children: ReactNode }
     })
     updateSelectedSections(prev => prev)
   }
-  const setCourseVisible = (course: Course) => {
-    course.setVisibility(true)
-    const courseKey = generateCourseKey(
-      course.getStudyPlan(),
-      course.getId(),
-      course.getName(),
-      course.getSchool()
-    )
+  const setCourseVisible = (courseKey: string) => {
+    courseRegistry.get(courseKey)!.setVisibility(true)
     // trigger a re-render with this
     setVisibleCourses(prev => {
       const temp = new Set(prev)

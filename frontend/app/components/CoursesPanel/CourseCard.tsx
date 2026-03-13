@@ -5,7 +5,7 @@ import { CourseSection } from "@/app/models/CourseSection";
 import { Course } from "@/app/models/Course";
 import { CourseColor } from "@/app/utils/CourseCard";
 import { useTheme } from "@/app/providers/useTheme";
-import {generateCourseKey, useCourseCache} from "@/app/providers/useCourseCache";
+import {useCourseCache} from "@/app/providers/useCourseCache";
 
 
 interface CourseCardCheckboxAllProps {
@@ -117,9 +117,8 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
 
   // set to track locally selected sections (per course)
   const isCourseVisible = useMemo(() => {
-    return visibleCourses.has(
-      generateCourseKey(course.getStudyPlan(), course.getId(), course.getName(), course.getSchool())
-  )}, [visibleCourses, course])
+    return visibleCourses.has(course.getKey())
+  }, [visibleCourses, course])
 
   const areAllChecked = course.getSections().every(section => selectedSections.has(section))
 
@@ -132,8 +131,8 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
 
   // function to handle the visibility of the course
   const handleCourseVisibility = () => {
-    if (isCourseVisible) setCourseInvisible(course)
-    else setCourseVisible(course)
+    if (isCourseVisible) setCourseInvisible(course.getKey())
+    else setCourseVisible(course.getKey())
   }
 
   return (
@@ -196,7 +195,7 @@ function CourseCard({ course, colorPair }: CourseCardProps) {
           <div
             className="
           flex flex-col justify-start items-center mt-1 w-full overflow-x-auto scrollbar-thin
-          scrollbar-thumb-[rgb(var(--color-border))] scrollbar-track-[rgb(var(--color-surface-muted))]">
+          scrollbar-thumb-border scrollbar-track-surface-muted">
             {/* creates a button for every group in classGroups */}
             {course.getSections().map((section: CourseSection, index: number) =>
               <CourseCardSection
