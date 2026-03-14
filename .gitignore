@@ -26,6 +26,7 @@ gateway/
 # misc
 .DS_Store
 *.pem
+favicon_io/
 
 # debug
 npm-debug.log*
