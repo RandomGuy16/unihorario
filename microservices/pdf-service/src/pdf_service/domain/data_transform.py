@@ -10,28 +10,6 @@ from pdf_service.domain.models import CareerCurriculumMetadata, CareerCurriculum
 from typing import BinaryIO, List
 
 
-def _write_catalog(json_path: path.Path, catalog: Catalog):
-    """
-    Writes the provided catalog data to a JSON file at the specified path.
-
-    This function ensures the existence of the directory where the JSON file
-    will be stored. If the directory does not exist, it creates the directory
-    structure before writing the file. The catalog data is serialized into
-    JSON format with indentation for readability.
-
-    :param json_path: The path where the catalog JSON file should be saved.
-    :type json_path: path.Path
-    :param catalog: The catalog object containing the data to be written to
-        the JSON file.
-    :type catalog: Catalog
-    :return: None
-    """
-    if not os.path.exists(CATALOG_DIR_PATH):
-        os.makedirs(CATALOG_DIR_PATH)
-    with open(json_path, 'w') as catalog_file:
-        json.dump(catalog.model_dump(), catalog_file, indent=4, ensure_ascii=False)
-
-
 def create_catalog_from_university_curriculum(curriculum: UniversityCurriculum):
     """Build a catalog index from all stored career JSON files.
 
@@ -176,38 +154,6 @@ def _parser_get_cycles(pdf_file: pdfplumber.PDF):
     return cycles
 
 
-def _write_json(json_file: path.Path, career: UniversityCurriculum):
-    """Persist a curriculum to disk in the careers directory.
-
-    Creates the careers directory if it does not exist, then writes the
-    serialized curriculum JSON with UTF-8 content preserved.
-
-    :param json_file: Target path for the JSON file.
-    :type json_file: pathlib.Path
-    :param career: Curriculum data to serialize.
-    :type career: UniversityCurriculum
-    :return: None
-    :rtype: None
-    """
-    if not os.path.exists(CAREERS_DIR_PATH):
-        # Ensure target directory exists before writing.
-        os.makedirs(CAREERS_DIR_PATH)
-    with open(json_file, "w") as f:
-        json.dump(career.model_dump(), f, indent=4, ensure_ascii=False)
-
-
-def read_career(school: str):
-    """Load a curriculum JSON by school name.
-
-    :param school: School identifier used as the JSON filename stem.
-    :type school: str
-    :return: Parsed curriculum model from disk.
-    :rtype: UniversityCurriculum
-    """
-    with open(path.Path(CAREERS_DIR_PATH, f"{school}.json"), "r") as f:
-        # Validate against the Pydantic model for consistent shape.
-        return UniversityCurriculum.model_validate(json.load(f))
-
 def _parser_handle_row(row: List[str], section_n: int, curr_cycle: Cycle, metadata: CareerCurriculumMetadata):
     """Parse a single table row into course sections and schedules.
 
@@ -324,24 +270,10 @@ def parse_pdf_sync(pdf_file: path.Path | BinaryIO):
 
 
 def main():
-    """Batch-convert all PDFs in PDF_DIR_PATH.
-
-    Iterates over every PDF in the configured directory and runs the
-    synchronous parser, producing JSON files in the careers directory.
-
-    :return: None
-    :rtype: None
     """
-    # convert all files in pdf/
-    pdf_files = list(path.Path(PDF_DIR_PATH).glob("*.pdf"))
-    if not pdf_files:
-        logger.info("No PDF fixtures found", extra={"pdf_dir": str(PDF_DIR_PATH)})
-        return
-    parsed = parse_pdf_sync(pdf_files[0])
-    logger.info(
-        "Parsed sample PDF from CLI helper",
-        extra={"school": parsed.years[0].careerCurriculums[0].metadata.school}
-    )
+    nothing to do here
+    """
+    pass
 
 
 if __name__ == '__main__':

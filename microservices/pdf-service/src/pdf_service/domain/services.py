@@ -61,6 +61,7 @@ class JobInfoTree(BaseModel):
     children: list["JobInfoTree"] = Field(default_factory=list)
 
 
+# default runner for awaitable jobs
 async def _runner(info: JobInfo, coro: Coroutine[Any, Any, Any]) -> None:
     """
     Executes a coroutine and updates the JobInfo status and timestamps.
@@ -114,7 +115,13 @@ class JobManager:
         self._job_events: Dict[str, asyncio.Event] = {}
 
     def _on_job_added(self, job_id: str):
-        """some docstring"""
+        """
+        Handles the addition of a new job by marking the event associated with the job
+        ID as set, if it exists within the internal job events dictionary.
+
+        :param job_id: The unique identifier of the job to be added.
+        :type job_id: str
+        """
         if job_id in self._job_events:
             self._job_events[job_id].set()
 
@@ -173,7 +180,7 @@ class JobManager:
         # start the task
         task                = asyncio.create_task(_runner(info, coro))
         self._tasks[job_id] = task
-        self._on_job_added(job_id)
+        self._on_job_added(job_id) # set the job event to true so this job can be awaitable
         logger.info("Job submitted", extra={"job_id": job_id, "kind": kind})
         return job_id
 
@@ -221,7 +228,7 @@ class JobManager:
             )
         # generate job information for the future task and link immediately
         child_job_id = uuid.uuid4().hex
-        self._jobs[child_job_id] = JobInfo(job_id=child_job_id, kind=kind)
+        self._jobs[child_job_id]       = JobInfo(job_id=child_job_id, kind=kind)
         self._job_events[child_job_id] = asyncio.Event()  # create a event for the future job
         self.link_child(parent_job_id, child_job_id)
 
@@ -236,6 +243,7 @@ class JobManager:
             except asyncio.CancelledError as e:
                 # Mark the child terminal and wake awaiters without spawning a
                 # throwaway task that would only raise in the background.
+                # basically don't start the next job without letting it fuss
                 self._finalize_reserved_without_task(
                     child_job_id,
                     JobStatus.CANCELLED,
@@ -306,6 +314,7 @@ class JobManager:
         await job_event.wait()
         # now the job should be in ._tasks
         task = self._tasks.get(job_id)
+        # if it didn't start, log the details
         if not task:
             # Reserved child jobs may complete terminally without ever starting.
             info = self.get_info(job_id)
@@ -442,15 +451,15 @@ class CatalogService:
             started_at = perf_counter()
             async with self.uow_factory() as uow:
                 await self.build_catalog()
-                self.data = await uow.catalogs.get()
-            logger.info(
-                "Catalog refresh complete",
-                extra={
-                    "career_count": len(self.data.careers),
-                    "duration_ms": round((perf_counter() - started_at) * 1000, 2)
-                }
-            )
-        return self.data
+                catalog = await uow.catalogs.get()
+                logger.info(
+                    "Catalog refresh complete",
+                    extra={
+                        "career_count": len(catalog.careers),
+                        "duration_ms": round((perf_counter() - started_at) * 1000, 2)
+                    }
+                )
+                return catalog
 
     def refresh_catalog_in_background(self) -> str:
         """
@@ -476,7 +485,7 @@ class CatalogService:
                 await uow.catalogs.save(career)
             logger.info("Built catalog snapshot", extra={"career_count": len(catalog.careers)})
 
-
+    # still not used
     def has_career(self, career: str):
         """
         Checks if a career exists in the catalog.
@@ -510,16 +519,45 @@ class CurriculumService:
 
     @staticmethod
     def _is_pdf_content_type(content_type: Optional[str]) -> bool:
+        """
+        Checks if the given content type corresponds to a PDF.
+
+        This method determines whether the provided content type string matches
+        a PDF MIME type. It performs normalization by converting the string to
+        lowercase, trimming any whitespace, and considering only the portion
+        before the first semicolon.
+
+        :param content_type: The MIME type of the content to check. It can be
+            None or a string.
+        :return: A boolean value indicating whether the content type is a
+            recognized PDF MIME type.
+        :rtype: bool
+        """
         if not content_type:
             return False
         normalized = content_type.lower().split(";", 1)[0].strip()
         return normalized in {"application/pdf", "application/x-pdf"}
 
     def _read_pdf_bytes_with_limit(self, pdf: BinaryIO) -> bytes:
+        """
+        Reads the content of a PDF file in binary format, ensuring the size does not
+        exceed the maximum upload limit. The file is read in chunks to minimize memory
+        usage and is only returned as a single binary object after successful
+        validation.
+
+        :param pdf: A binary stream representing the PDF file to be read.
+        :type pdf: BinaryIO
+        :return: The binary content of the PDF file if it meets the size constraints.
+        :rtype: bytes
+        :raises FileTooLargeError: Raised if the total file size exceeds the defined
+            maximum upload size.
+        :raises UploadValidationError: Raised if the uploaded file is empty.
+        """
         chunks: list[bytes] = []
         total_read = 0
 
         while True:
+            # read it chunk by chunk
             chunk = pdf.read(64 * 1024)
             if not chunk:
                 break
@@ -661,17 +699,25 @@ class CurriculumService:
         a background job to parse the PDF and then refresh the catalog.
 
         :param pdf: The uploaded PDF file binary stream.
+        :param filename: name of the file uploaded
+        :param content_type: MIME type of the file
         :return: A CreateCurriculumResponse containing metadata and the parse job ID.
         :raises RuntimeError: If the parse job submission fails.
         """
+        # before parsing it, do some validations
         self._validate_upload_metadata(filename=filename, content_type=content_type)
+
         pdf_bytes = self._read_pdf_bytes_with_limit(pdf)
         pdf_size_bytes = len(pdf_bytes)
+
         logger.info("Read uploaded PDF into memory", extra={"pdf_size_bytes": pdf_size_bytes})
         self._validate_pdf_signature(pdf_bytes)
+
         if self.clamav_enabled:
             await self._scan_pdf_with_clamav(pdf_bytes)
             logger.info("Uploaded PDF passed ClamAV scan", extra={"pdf_size_bytes": pdf_size_bytes})
+
+        # at this point the pdf is "clean"
         # read the metadata, this is kinda fast compared to parsing the whole file
         metadata = await self.get_curriculum_metadata(BytesIO(pdf_bytes))
         logger.info(
@@ -682,18 +728,21 @@ class CurriculumService:
                 "academic_period": metadata.academicPeriod
             }
         )
+        # now the other jobs will be submitted to the job manager
         parse_job_id = self.jobs.submit(
             kind="curriculum.parse_pdf",
             coro=self.parse_pdf(BytesIO(pdf_bytes))
         )
         if not parse_job_id:
             raise RuntimeError("Failed to submit parse job")
+
         # when parsing finishes, refresh the catalog as a job immediately executed after the parsing job
         catalog_refresh_job_id = self.jobs.then(
             parse_job_id,
             "curriculum.catalog.refresh_catalog",
             lambda: self.catalog_service.refresh_catalog()
         )
+
         logger.info(
             "Scheduled curriculum processing jobs",
             extra={

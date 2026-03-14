@@ -68,6 +68,7 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
         :return: None
         :rtype: None
         """
+        # first pick up the already existing years to avoid repetitions
         for incoming_year in university_curriculum.years:
             existing_years = (
                 await self.session.scalars(
@@ -81,34 +82,36 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
                     .where(YearORM.year == incoming_year.year)
                 )
             ).unique().all()
-
+            # if there ain't any repetitions just add the study plan
             if not existing_years:
                 year_orm = YearORM(year=incoming_year.year)
+                # transform the career curriculums to orm and add them
                 year_orm.career_curriculums = [
-                    career_curriculum_to_orm(career)
-                    for career in incoming_year.careerCurriculums
+                    career_curriculum_to_orm(career) for career in incoming_year.careerCurriculums
                 ]
                 self.session.add(year_orm)
                 continue
-
+            # the already existing year is the first item, the others are repetitions
             existing_year = existing_years[0]
+            # iterate the repetitions and move their careers
             for duplicate_year in existing_years[1:]:
                 for duplicate_career in list(duplicate_year.career_curriculums):
                     existing_year.career_curriculums.append(duplicate_career)
                 await self.session.delete(duplicate_year)
 
+            # this object is the aggregate of all the careers for x study plan
             existing_careers = {
-                (career.school, career.study_plan): career
-                for career in existing_year.career_curriculums
+                (career.school, career.study_plan): career for career in existing_year.career_curriculums
             }
-
+            # there usually is only one incoming year
             for incoming_career in incoming_year.careerCurriculums:
                 career_key = (incoming_career.metadata.school, incoming_career.metadata.studyPlan)
+                # if the career already exists in the database, remove it
                 previous_career = existing_careers.get(career_key)
                 if previous_career is not None:
                     existing_year.career_curriculums.remove(previous_career)
                     await self.session.flush()
-
+                # and replace it
                 replacement_career = career_curriculum_to_orm(incoming_career)
                 existing_year.career_curriculums.append(replacement_career)
                 existing_careers[career_key] = replacement_career
