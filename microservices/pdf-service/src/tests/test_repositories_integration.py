@@ -1,11 +1,15 @@
 import os
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
 from sqlalchemy import delete
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.orm import selectinload
 
+from pdf_service.core.config import FIXTURES_DIR_PATH
+from pdf_service.domain.data_transform import parse_pdf_sync
 from pdf_service.domain.models import (
     Catalog,
     CatalogCareerData,
@@ -18,6 +22,7 @@ from pdf_service.domain.models import (
     Year,
 )
 from pdf_service.domain.orm_models import Base, CatalogCareerORM, CareerCurriculumORM, YearORM
+from pdf_service.domain.mappers import career_curriculum_to_orm
 from pdf_service.domain.repositories import SqlCatalogRepository, SqlUniversityCurriculumRepository
 
 
@@ -25,6 +30,7 @@ TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://postgres:postgres@localhost:5432/unihorario_test",
 )
+FIXTURES_DIR = Path(FIXTURES_DIR_PATH)
 
 
 def _sample_curriculum() -> UniversityCurriculum:
@@ -321,7 +327,7 @@ async def test_sql_university_curriculum_repository_save_replaces_existing_caree
     await repo.save(updated)
     await session.commit()
 
-    stored = await repo.get_by_school("Computer Science")
+    stored = await repo.get_by_school(first_school)
 
     assert stored is not None
     assert len(stored.years) == 1
@@ -329,6 +335,61 @@ async def test_sql_university_curriculum_repository_save_replaces_existing_caree
     assert len(careers) == 1
     assert careers[0].metadata.academicPeriod == "2026-2"
     assert careers[0].cycles[0].cycle == "CICLO 2"
+
+
+@pytest.mark.asyncio
+async def test_sql_university_curriculum_repository_save_removes_all_stale_duplicate_careers(session):
+    repo = SqlUniversityCurriculumRepository(session)
+    first = parse_pdf_sync(FIXTURES_DIR / "ingenieria_sistemas.pdf")
+    first_year = first.years[0].year
+    first_career = first.years[0].careerCurriculums[0]
+    first_school = first_career.metadata.school
+    first_study_plan = first_career.metadata.studyPlan
+    updated = first.model_copy(deep=True)
+    updated_career = updated.years[0].careerCurriculums[0]
+    updated_career.metadata.academicPeriod = "2099-1"
+    updated_career.cycles = updated_career.cycles[:1]
+
+    await repo.save(first)
+    await session.commit()
+
+    stored_year = await session.scalar(
+        select(YearORM)
+        .options(selectinload(YearORM.career_curriculums))
+        .where(YearORM.year == first_year)
+    )
+    assert stored_year is not None
+    stored_year.career_curriculums.append(career_curriculum_to_orm(first.years[0].careerCurriculums[0]))
+    await session.commit()
+
+    duplicate_count = await session.scalar(
+        select(func.count())
+        .select_from(CareerCurriculumORM)
+        .where(CareerCurriculumORM.school == first_school)
+        .where(CareerCurriculumORM.study_plan == first_study_plan)
+    )
+    assert duplicate_count == 2
+
+    await repo.save(updated)
+    await session.commit()
+
+    remaining_count = await session.scalar(
+        select(func.count())
+        .select_from(CareerCurriculumORM)
+        .where(CareerCurriculumORM.school == first_school)
+        .where(CareerCurriculumORM.study_plan == first_study_plan)
+    )
+    stored = await repo.get_by_school(first_school)
+
+    assert remaining_count == 1
+    assert stored is not None
+    assert len(stored.years) == 1
+    careers = stored.years[0].careerCurriculums
+    assert len(careers) == 1
+    assert careers[0].metadata.school == first_career.metadata.school
+    assert careers[0].metadata.studyPlan == first_career.metadata.studyPlan
+    assert careers[0].metadata.academicPeriod == "2099-1"
+    assert len(careers[0].cycles) == 1
 
 
 @pytest.mark.asyncio

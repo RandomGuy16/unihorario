@@ -99,22 +99,23 @@ class SqlUniversityCurriculumRepository(UniversityCurriculumRepository):
                     existing_year.career_curriculums.append(duplicate_career)
                 await self.session.delete(duplicate_year)
 
-            # this object is the aggregate of all the careers for x study plan
-            existing_careers = {
-                (career.school, career.study_plan): career for career in existing_year.career_curriculums
-            }
             # there usually is only one incoming year
             for incoming_career in incoming_year.careerCurriculums:
                 career_key = (incoming_career.metadata.school, incoming_career.metadata.studyPlan)
-                # if the career already exists in the database, remove it
-                previous_career = existing_careers.get(career_key)
-                if previous_career is not None:
+                # Remove every stale copy for the same natural key before
+                # appending the replacement career tree.
+                matching_careers = [
+                    career
+                    for career in list(existing_year.career_curriculums)
+                    if (career.school, career.study_plan) == career_key
+                ]
+                for previous_career in matching_careers:
                     existing_year.career_curriculums.remove(previous_career)
+                if matching_careers:
                     await self.session.flush()
                 # and replace it
                 replacement_career = career_curriculum_to_orm(incoming_career)
                 existing_year.career_curriculums.append(replacement_career)
-                existing_careers[career_key] = replacement_career
 
     async def get(self) -> UniversityCurriculum | None:
         """Fetch curriculum aggregate."""
