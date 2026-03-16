@@ -327,7 +327,7 @@ async def test_sql_university_curriculum_repository_save_replaces_existing_caree
     await repo.save(updated)
     await session.commit()
 
-    stored = await repo.get_by_school(first_school)
+    stored = await repo.get_by_school("Computer Science")
 
     assert stored is not None
     assert len(stored.years) == 1
